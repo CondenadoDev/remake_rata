@@ -6,23 +6,23 @@ namespace DungeonSystem.Core
 {
     public static class BSPGenerator
     {
-        public static DungeonData GenerateDungeon(GenerationSettings settings)
+        public static (DungeonData data, BSPNode rootNode) GenerateDungeon(GenerationSettings settings)
         {
             Random.InitState(settings.seed);
-            
+
             DungeonData data = new DungeonData(settings.dungeonWidth, settings.dungeonHeight);
-            
+
             // Inicializar mapa con muros
             InitializeMap(data);
-            
+
             // Crear y dividir BSP
             BSPNode rootNode = new BSPNode(new Rect(0, 0, settings.dungeonWidth, settings.dungeonHeight));
             SplitNode(rootNode, 0, settings);
-            
+
             // Crear habitaciones
             CreateRoomsFromBSP(rootNode, data, settings);
-            
-            return data;
+
+            return (data, rootNode);
         }
 
         private static void InitializeMap(DungeonData data)

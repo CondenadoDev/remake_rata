@@ -61,16 +61,16 @@ namespace DungeonSystem.Interaction
             if (playerInRange && Input.GetKeyDown(interactionKey))
             {
                 Debug.Log("[Portal] E pressed - Generating WITHOUT coroutine");
-                GenerateDungeonDirect();
+                StartCoroutine(GenerateDungeonDirect());
             }
         }
         
-        void GenerateDungeonDirect()
+        System.Collections.IEnumerator GenerateDungeonDirect()
         {
-            if (isGenerating || dungeonManager == null) return;
-            
+            if (isGenerating || dungeonManager == null) yield break;
+
             isGenerating = true;
-            
+
             try
             {
                 Debug.Log("[Portal] === DIRECT GENERATION START ===");
@@ -87,8 +87,8 @@ namespace DungeonSystem.Interaction
                 }
                 
                 // Generar TODO de una vez (como el SafeGenerator)
-                Debug.Log("[Portal] Calling GenerateCompleteDungeon...");
-                dungeonManager.GenerateCompleteDungeon();
+                Debug.Log("[Portal] Calling GenerateCompleteDungeon async...");
+                yield return StartCoroutine(dungeonManager.GenerateCompleteDungeonAsync());
                 
                 Debug.Log("[Portal] Generation complete!");
                 

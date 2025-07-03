@@ -73,13 +73,13 @@ public class FinalPortalSetup : MonoBehaviour
         // Detectar input
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
-            GenerateDungeon();
+            StartCoroutine(GenerateDungeon());
         }
     }
     
-    void GenerateDungeon()
+    System.Collections.IEnumerator GenerateDungeon()
     {
-        if (!canGenerate) return;
+        if (!canGenerate) yield break;
         
         canGenerate = false;
         
@@ -99,7 +99,7 @@ public class FinalPortalSetup : MonoBehaviour
             }
             
             // GENERAR (exactamente como funciona con G)
-            dungeonManager.GenerateCompleteDungeon();
+            yield return StartCoroutine(dungeonManager.GenerateCompleteDungeonAsync());
             
             // Verificar que se generó
             if (dungeonManager.DungeonData != null && dungeonManager.DungeonData.rooms.Count > 0)
