@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84756b8fa6fc4646b9176717c35c7da5, type: 3}
+  m_Name: RenderSettings
+  m_EditorClassIdentifier: 
+  generate3DAssets: 1
+  wallHeight: 3
+  useObjectPooling: 1
+  assetsParent: {fileID: 0}
+  floorPrefab: {fileID: 8919464002766169276, guid: e6e98ce737563944b8724e8d7d6e59fc, type: 3}
+  wallPrefab: {fileID: 1659752511582659498, guid: f893c16f8b397694fac693352012d46d, type: 3}
+  doorPrefab: {fileID: 361984709214107594, guid: 78156da568055ce4a91cb8b1a2f8963a, type: 3}
+  entrancePrefab: {fileID: 0}
+  useSpecialEntranceEffect: 1
+  entranceMarkerPrefab: {fileID: 0}
+  entranceScale: 1.2
+  generateIrregularMeshes: 0
+  meshResolution: 4
+  irregularityStrength: 0.3
+  heightVariation: 0.1
+  noiseScale: 2
+  noiseStrength: 0.15
+  floorMaterial: {fileID: 0}
+  wallMaterial: {fileID: 0}
+  doorMaterial: {fileID: 0}
+  entranceMaterial: {fileID: 0}
+  useProceduralMaterials: 0
+  floorBaseColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+  wallBaseColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+  textureScale: 2

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b415de5807f442219617dede3f9a87d7, type: 3}
+  m_Name: StartingCriteria
+  m_EditorClassIdentifier: 
+  minRoomArea: 64
+  minConnections: 1
+  maxConnections: 3
+  preferMapEdge: 1
+  edgePreferenceStrength: 80
+  allowCorners: 0
+  cornerAvoidanceRadius: 20
+  createExteriorEntrance: 1
+  entranceWidth: 3
+  preferredEdge: 0
+  minAccessibilityRatio: 0.8
