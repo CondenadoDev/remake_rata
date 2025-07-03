@@ -25,7 +25,7 @@ public class QuickSetupChecker : MonoBehaviour
         }
         
         // 2. Check DungeonManager
-        DungeonManager dm = FindObjectOfType<DungeonManager>();
+        DungeonManager dm = FindFirstObjectByType<DungeonManager>();
         if (dm != null)
         {
             Debug.Log("✅ DungeonManager found");
@@ -90,14 +90,14 @@ public class QuickSetupChecker : MonoBehaviour
         }
         
         // 3. Check Portal
-        var portal = FindObjectOfType<FinalPortalSetup>();
+        var portal = FindFirstObjectByType<DungeonSystem.Interaction.DungeonPortalInteractable>();
         if (portal != null)
         {
             Debug.Log("✅ Portal found");
         }
         else
         {
-            Debug.LogWarning("⚠️ No FinalPortalSetup found - add it to your portal object");
+            Debug.LogWarning("⚠️ No DungeonPortalInteractable found - add it to your portal object");
         }
         
         // Summary

@@ -12,7 +12,7 @@ public class DungeonStepTester : MonoBehaviour
     void Start()
     {
         if (dungeonManager == null)
-            dungeonManager = FindObjectOfType<DungeonManager>();
+            dungeonManager = FindFirstObjectByType<DungeonManager>();
             
         if (dungeonManager != null)
         {

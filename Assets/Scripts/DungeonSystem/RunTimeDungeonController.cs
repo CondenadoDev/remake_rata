@@ -32,7 +32,7 @@ namespace DungeonSystem.Runtime
         {
             // Buscar DungeonManager si no está asignado
             if (dungeonManager == null)
-                dungeonManager = FindObjectOfType<DungeonManager>();
+                dungeonManager = FindFirstObjectByType<DungeonManager>();
             
             // Configurar botones
             SetupUI();
@@ -233,7 +233,7 @@ namespace DungeonSystem.Runtime
         private void CreateRuntimeUI()
         {
             // Buscar Canvas o crear uno
-            Canvas canvas = FindObjectOfType<Canvas>();
+            Canvas canvas = FindFirstObjectByType<Canvas>();
             if (canvas == null)
             {
                 GameObject canvasObj = new GameObject("Canvas");

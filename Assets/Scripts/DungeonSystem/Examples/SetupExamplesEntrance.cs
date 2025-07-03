@@ -16,7 +16,7 @@ namespace DungeonSystem.Examples
         public static void SetupExteriorEntrance()
         {
             // Buscar o crear DungeonManager
-            DungeonManager dungeonManager = GameObject.FindObjectOfType<DungeonManager>();
+            DungeonManager dungeonManager = GameObject.FindFirstObjectByType<DungeonManager>();
             if (dungeonManager == null)
             {
                 GameObject go = new GameObject("Dungeon System with Entrance");

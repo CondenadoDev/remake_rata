@@ -157,7 +157,7 @@ public class CompleteDungeonSetup : EditorWindow
         renderer.material = mat;
         
         // Add interaction
-        portal.AddComponent<FinalPortalSetup>();
+        portal.AddComponent<DungeonSystem.Interaction.DungeonPortalInteractable>();
         
         // Add light
         GameObject light = new GameObject("Portal Light");
@@ -294,7 +294,7 @@ public class CompleteDungeonSetup : EditorWindow
         }
         
         // Connect portal to dungeon manager
-        var portalScript = portal.GetComponent<FinalPortalSetup>();
+        var portalScript = portal.GetComponent<DungeonSystem.Interaction.DungeonPortalInteractable>();
         if (portalScript != null)
         {
             portalScript.dungeonManager = manager;
