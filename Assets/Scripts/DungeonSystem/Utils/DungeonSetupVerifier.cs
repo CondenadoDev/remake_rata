@@ -27,7 +27,7 @@ public class DungeonSetupVerifier : MonoBehaviour
         report.AppendLine("1. DUNGEON MANAGER:");
         if (dungeonManager == null)
         {
-            dungeonManager = FindObjectOfType<DungeonManager>();
+            dungeonManager = FindFirstObjectByType<DungeonManager>();
         }
         
         if (dungeonManager != null)
@@ -110,13 +110,12 @@ public class DungeonSetupVerifier : MonoBehaviour
         // 4. Verificar Portal
         report.AppendLine("\n4. PORTAL:");
         var portal = GetComponent<DungeonSystem.Interaction.DungeonPortalInteractable>();
-        var portalFixed = GetComponent<DungeonSystem.Interaction.DungeonPortalInteractableFixed>();
         var simpleGen = GetComponent<DungeonSystem.Interaction.SimpleDungeonGenerator>();
-        
-        if (portal != null || portalFixed != null || simpleGen != null)
+
+        if (portal != null || simpleGen != null)
         {
             report.AppendLine("✓ Portal script found");
-            report.AppendLine($"  - Type: {(portal != null ? "DungeonPortalInteractable" : portalFixed != null ? "DungeonPortalInteractableFixed" : "SimpleDungeonGenerator")}");
+            report.AppendLine($"  - Type: {(portal != null ? "DungeonPortalInteractable" : "SimpleDungeonGenerator")}");
         }
         else
         {

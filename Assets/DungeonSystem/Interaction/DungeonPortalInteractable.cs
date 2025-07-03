@@ -1,4 +1,4 @@
-// DungeonPortalInteractableFixed.cs
+// DungeonPortalInteractable.cs
 //---------------------------------------------------------------------------
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,11 +9,10 @@ using DungeonSystem.Spawning;   // para SpawnSystem.OnSpawningComplete
 namespace DungeonSystem.Interaction
 {
     /// <summary>
-    /// Portal interactuable que genera la mazmorra bajo demanda,
-    /// cambia la semilla, teletransporta al jugador
-    /// y muestra logs de cuántos spawns se hicieron.
+    /// Interactable portal that generates a dungeon on demand,
+    /// teleports the player and reports spawn statistics.
     /// </summary>
-    public class DungeonPortalInteractableFixed : MonoBehaviour
+    public class DungeonPortalInteractable : MonoBehaviour
     {
         #region Inspector ----------------------------------------------------
 
@@ -56,6 +55,9 @@ namespace DungeonSystem.Interaction
             }
         }
 
+        /// <summary>
+        /// Initializes references and prepares the portal UI.
+        /// </summary>
         void Start()
         {
             DebugLog("Portal Start()");
@@ -63,7 +65,7 @@ namespace DungeonSystem.Interaction
             // Obtener referencias si faltan
             if (!dungeonManager)
             {
-                dungeonManager = FindObjectOfType<DungeonManager>();
+                dungeonManager = FindFirstObjectByType<DungeonManager>();
                 DebugLog($"DungeonManager found: {dungeonManager}");
             }
             if (dungeonManager) dungeonManager.autoGenerateOnStart = false;
@@ -140,6 +142,9 @@ namespace DungeonSystem.Interaction
             }
         }
 
+        /// <summary>
+        /// Executes the full dungeon generation process step by step.
+        /// </summary>
         IEnumerator GenerateDungeonCoroutine()
         {
             isGenerating = true;
@@ -193,6 +198,9 @@ namespace DungeonSystem.Interaction
         // ------------------------------------------------------------------
         #region Teleport -----------------------------------------------------
 
+        /// <summary>
+        /// Moves the player to the generated dungeon entrance or starting room.
+        /// </summary>
         void TeleportPlayerToDungeon()
         {
             if (!playerTransform || dungeonManager.DungeonData == null)

@@ -29,7 +29,7 @@ namespace DungeonSystem.Interaction
             
             // Buscar DungeonManager
             if (dungeonManager == null)
-                dungeonManager = FindObjectOfType<DungeonManager>();
+                dungeonManager = FindFirstObjectByType<DungeonManager>();
                 
             if (dungeonManager != null)
                 dungeonManager.autoGenerateOnStart = false;
@@ -71,42 +71,33 @@ namespace DungeonSystem.Interaction
 
             isGenerating = true;
 
-            try
+            Debug.Log("[Portal] === DIRECT GENERATION START ===");
+
+            // Ocultar UI
+            if (promptUI) promptUI.SetActive(false);
+
+            // Nueva semilla
+            if (randomizeSeed)
             {
-                Debug.Log("[Portal] === DIRECT GENERATION START ===");
-                
-                // Ocultar UI
-                if (promptUI) promptUI.SetActive(false);
-                
-                // Nueva semilla
-                if (randomizeSeed)
-                {
-                    int seed = Random.Range(0, 999999);
-                    dungeonManager.generationSettings.seed = seed;
-                    Debug.Log($"[Portal] New seed: {seed}");
-                }
-                
-                // Generar TODO de una vez (como el SafeGenerator)
-                Debug.Log("[Portal] Calling GenerateCompleteDungeon async...");
-                yield return StartCoroutine(dungeonManager.GenerateCompleteDungeonAsync());
-                
-                Debug.Log("[Portal] Generation complete!");
-                
-                // Teleport
-                TeleportPlayer();
+                int seed = Random.Range(0, 999999);
+                dungeonManager.generationSettings.seed = seed;
+                Debug.Log($"[Portal] New seed: {seed}");
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[Portal] ERROR: {e.Message}\n{e.StackTrace}");
-            }
-            finally
-            {
-                isGenerating = false;
-                
-                // Reactivar UI si sigue cerca
-                if (playerInRange && promptUI)
-                    promptUI.SetActive(true);
-            }
+
+            // Generar TODO de una vez (como el SafeGenerator)
+            Debug.Log("[Portal] Calling GenerateCompleteDungeon async...");
+            yield return StartCoroutine(dungeonManager.GenerateCompleteDungeonAsync());
+
+            Debug.Log("[Portal] Generation complete!");
+
+            // Teleport
+            TeleportPlayer();
+
+            isGenerating = false;
+
+            // Reactivar UI si sigue cerca
+            if (playerInRange && promptUI)
+                promptUI.SetActive(true);
         }
         
         void TeleportPlayer()

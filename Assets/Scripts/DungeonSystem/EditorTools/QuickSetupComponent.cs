@@ -49,7 +49,7 @@ namespace DungeonSystem.Examples
             }
 
             // Aplicar al DungeonManager si existe
-            var dungeonManager = FindObjectOfType<DungeonManager>();
+            var dungeonManager = FindFirstObjectByType<DungeonManager>();
             if (dungeonManager != null)
             {
                 dungeonManager.generationSettings = generationSettings;
@@ -65,7 +65,7 @@ namespace DungeonSystem.Examples
         [ContextMenu("Generate with Current Settings")]
         public void GenerateWithCurrentSettings()
         {
-            var dungeonManager = FindObjectOfType<DungeonManager>();
+            var dungeonManager = FindFirstObjectByType<DungeonManager>();
             if (dungeonManager != null)
             {
                 dungeonManager.GenerateCompleteDungeon();

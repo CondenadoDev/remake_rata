@@ -66,6 +66,9 @@ namespace DungeonSystem.Spawning
             ValidateAndBalance();
             
             Debug.Log($"Spawning complete: {spawnedItems.Count} items, {spawnedEnemies.Count} enemies");
+
+            // Notify listeners
+            OnSpawningComplete?.Invoke(spawnedItems.Count, spawnedEnemies.Count);
         }
 
         private void CalculateRoomDistances()

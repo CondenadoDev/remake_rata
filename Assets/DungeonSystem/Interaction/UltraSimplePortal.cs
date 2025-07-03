@@ -25,7 +25,7 @@ public class FinalPortalSetup : MonoBehaviour
         // Buscar DungeonManager si no está asignado
         if (dungeonManager == null)
         {
-            dungeonManager = FindObjectOfType<DungeonManager>();
+            dungeonManager = FindFirstObjectByType<DungeonManager>();
             if (dungeonManager == null)
             {
                 Debug.LogError("[Portal] No DungeonManager found! Please add one to the scene.");
@@ -85,44 +85,33 @@ public class FinalPortalSetup : MonoBehaviour
         
         Debug.Log("[Portal] === GENERATING DUNGEON ===");
         
-        try
+        // Ocultar prompt
+        if (promptUI) promptUI.SetActive(false);
+
+        // Nueva semilla si está activado
+        if (generateNewSeed)
         {
-            // Ocultar prompt
-            if (promptUI) promptUI.SetActive(false);
-            
-            // Nueva semilla si está activado
-            if (generateNewSeed)
-            {
-                int seed = Random.Range(0, 999999);
-                dungeonManager.generationSettings.seed = seed;
-                Debug.Log($"[Portal] New seed: {seed}");
-            }
-            
-            // GENERAR (exactamente como funciona con G)
-            yield return StartCoroutine(dungeonManager.GenerateCompleteDungeonAsync());
-            
-            // Verificar que se generó
-            if (dungeonManager.DungeonData != null && dungeonManager.DungeonData.rooms.Count > 0)
-            {
-                Debug.Log($"[Portal] Success! Generated {dungeonManager.DungeonData.rooms.Count} rooms");
-                
-                // Teletransportar jugador
-                TeleportPlayerToDungeon();
-            }
-            else
-            {
-                Debug.LogError("[Portal] Generation failed - no rooms created!");
-            }
+            int seed = Random.Range(0, 999999);
+            dungeonManager.generationSettings.seed = seed;
+            Debug.Log($"[Portal] New seed: {seed}");
         }
-        catch (System.Exception e)
+
+        // Generar dungeon
+        yield return StartCoroutine(dungeonManager.GenerateCompleteDungeonAsync());
+
+        // Verificar que se generó
+        if (dungeonManager.DungeonData != null && dungeonManager.DungeonData.rooms.Count > 0)
         {
-            Debug.LogError($"[Portal] Error during generation: {e.Message}");
+            Debug.Log($"[Portal] Success! Generated {dungeonManager.DungeonData.rooms.Count} rooms");
+            TeleportPlayerToDungeon();
         }
-        finally
+        else
         {
-            // Re-habilitar generación después de 2 segundos
-            Invoke("EnableGeneration", 2f);
+            Debug.LogError("[Portal] Generation failed - no rooms created!");
         }
+
+        // Re-habilitar generación después de 2 segundos
+        Invoke("EnableGeneration", 2f);
     }
     
     void TeleportPlayerToDungeon()

@@ -84,7 +84,7 @@ public class DungeonGameExample : MonoBehaviour
         if (generator != null)
         {
             // Configurar generador simple
-            var dungeonManager = FindObjectOfType<DungeonManager>();
+            var dungeonManager = FindFirstObjectByType<DungeonManager>();
             if (dungeonManager && dungeonManager.generationSettings)
             {
                 // Puedes guardar la semilla del tema para este portal
@@ -228,7 +228,7 @@ public class DungeonGameExample : MonoBehaviour
         // Mostrar información de la semilla actual
         if (seedDisplayText)
         {
-            var dungeonManager = FindObjectOfType<DungeonManager>();
+            var dungeonManager = FindFirstObjectByType<DungeonManager>();
             if (dungeonManager && dungeonManager.generationSettings)
             {
                 seedDisplayText.text = $"Current Seed: {dungeonManager.generationSettings.seed}";
@@ -289,7 +289,7 @@ public class DungeonGameExample : MonoBehaviour
         }
         
         // Limpiar el dungeon
-        var dungeonManager = FindObjectOfType<DungeonManager>();
+        var dungeonManager = FindFirstObjectByType<DungeonManager>();
         if (dungeonManager)
         {
             dungeonManager.ClearDungeon();
