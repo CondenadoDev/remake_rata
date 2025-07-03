@@ -69,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 0946e4d0be5adfa45b635143115e5cd1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -135,7 +135,7 @@ MonoBehaviour:
   patrolWaitTimeMax: 3
   attackDamage: 10
   attackCooldown: 2
-  desiredDistance: 5
+  desiredDistance: 3
   burstChance: 0.3
   burstCount: 3
   burstDelay: 0.2
@@ -171,7 +171,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &4250086832617623650
 MonoBehaviour:

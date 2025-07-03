@@ -18,8 +18,8 @@ MonoBehaviour:
   assetsParent: {fileID: 0}
   floorPrefab: {fileID: 8919464002766169276, guid: e6e98ce737563944b8724e8d7d6e59fc, type: 3}
   wallPrefab: {fileID: 1659752511582659498, guid: f893c16f8b397694fac693352012d46d, type: 3}
-  doorPrefab: {fileID: 361984709214107594, guid: 78156da568055ce4a91cb8b1a2f8963a, type: 3}
-  entrancePrefab: {fileID: 0}
+  doorPrefab: {fileID: 0}
+  entrancePrefab: {fileID: 919132149155446097, guid: beae4bb62f696f946a0419b19151a0d2, type: 3}
   useSpecialEntranceEffect: 1
   entranceMarkerPrefab: {fileID: 0}
   entranceScale: 1.2

@@ -22,9 +22,11 @@ namespace DungeonSystem.Interaction
         [SerializeField] bool   randomizeSeedOnInteract = true;
 
         [Header("Dungeon Generation")]
-        [SerializeField] DungeonManager dungeonManager;
+        [SerializeField]
+        public DungeonManager dungeonManager;
         [SerializeField] Transform      playerTeleportPoint;
-
+        [SerializeField] bool teleportPlayer = true;
+        
         [Header("Simple UI")]
         [SerializeField] GameObject interactionPromptUI;
         [SerializeField] Text      promptText;
@@ -184,7 +186,8 @@ namespace DungeonSystem.Interaction
 
             /* 3️⃣  Todo OK → teletransportar */
             DebugLog("✓ Generation complete");
-            TeleportPlayerToDungeon();
+            if (teleportPlayer)
+                TeleportPlayerToDungeon();
 
             isGenerating = false;
 

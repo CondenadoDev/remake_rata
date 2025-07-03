@@ -8,15 +8,13 @@ namespace DungeonSystem.Spawning
 {
     public class SpawnSystem : MonoBehaviour
     {
-        public static event System.Action<int,int> OnSpawningComplete;
+        public static event System.Action<int, int> OnSpawningComplete;
 
-        [Header("Settings")]
-        public SpawnSettings spawnSettings;
-        
-        [Header("Runtime Data")]
-        public List<SpawnedEntity> spawnedItems = new List<SpawnedEntity>();
+        [Header("Settings")] public SpawnSettings spawnSettings;
+
+        [Header("Runtime Data")] public List<SpawnedEntity> spawnedItems = new List<SpawnedEntity>();
         public List<SpawnedEntity> spawnedEnemies = new List<SpawnedEntity>();
-        
+
         private DungeonData dungeonData;
         private Dictionary<RoomType, RoomTypeSpawnConfig> roomConfigs;
 
@@ -29,7 +27,7 @@ namespace DungeonSystem.Spawning
         private void BuildRoomConfigDictionary()
         {
             roomConfigs = new Dictionary<RoomType, RoomTypeSpawnConfig>();
-            
+
             if (spawnSettings.roomTypeConfigs != null)
             {
                 foreach (var config in spawnSettings.roomTypeConfigs)
@@ -44,16 +42,16 @@ namespace DungeonSystem.Spawning
             Debug.Log($"[SpawnSystem] → Comienzo de población: {data.rooms.Count} salas");
             dungeonData = data;
             ClearPreviousSpawns();
-            
+
             // Fase 1: Calcular distancias desde starting room
             CalculateRoomDistances();
-            
+
             // Fase 2: Asignar tipos especiales a habitaciones
             AssignSpecialRoomTypes();
 
             // Fase 3: Spawn items críticos primero (llaves, objetivos)
             SpawnCriticalItems();
-            
+
             // Fase 4: Spawn enemigos por tipo de habitación
             SpawnEnemiesByRoomType();
             Debug.Log($"[SpawnSystem] Fase 4 – Enemigos colocados: {spawnedEnemies.Count}");
@@ -64,7 +62,7 @@ namespace DungeonSystem.Spawning
 
             // Fase 6: Validar y balancear spawns
             ValidateAndBalance();
-            
+
             Debug.Log($"Spawning complete: {spawnedItems.Count} items, {spawnedEnemies.Count} enemies");
 
             // Notify listeners
@@ -73,12 +71,31 @@ namespace DungeonSystem.Spawning
 
         private void CalculateRoomDistances()
         {
-            if (dungeonData.startingRoom == null) return;
+            if (dungeonData.startingRoom == null)
+            {
+                Debug.LogWarning("[SpawnSystem] No starting room found, using first room");
+                if (dungeonData.rooms.Count > 0)
+                {
+                    dungeonData.startingRoom = dungeonData.rooms[0];
+                    dungeonData.startingRoom.isStartingRoom = true;
+                }
+                else
+                {
+                    Debug.LogError("[SpawnSystem] No rooms found!");
+                    return;
+                }
+            }
 
-            // BFS para calcular distancias
+            // Inicializar todas las distancias como -1
+            foreach (var room in dungeonData.rooms)
+            {
+                room.distanceFromStart = -1;
+            }
+
+            // BFS para calcular distancias de habitaciones conectadas
             Queue<Room> queue = new Queue<Room>();
             HashSet<Room> visited = new HashSet<Room>();
-            
+
             dungeonData.startingRoom.distanceFromStart = 0;
             queue.Enqueue(dungeonData.startingRoom);
             visited.Add(dungeonData.startingRoom);
@@ -86,14 +103,14 @@ namespace DungeonSystem.Spawning
             while (queue.Count > 0)
             {
                 Room current = queue.Dequeue();
-                
+
                 // Encontrar habitaciones conectadas a través de puertas
                 foreach (var door in dungeonData.doors)
                 {
                     Room neighbor = null;
                     if (door.roomA == current) neighbor = door.roomB;
                     else if (door.roomB == current) neighbor = door.roomA;
-                    
+
                     if (neighbor != null && !visited.Contains(neighbor))
                     {
                         neighbor.distanceFromStart = current.distanceFromStart + 1;
@@ -102,18 +119,39 @@ namespace DungeonSystem.Spawning
                     }
                 }
             }
+
+            // ✅ ASIGNAR DISTANCIAS ESTIMADAS a habitaciones desconectadas
+            foreach (var room in dungeonData.rooms.Where(r => r.distanceFromStart == -1))
+            {
+                // Usar distancia euclidiana como aproximación
+                float euclideanDistance = Vector2.Distance(
+                    new Vector2(dungeonData.startingRoom.centerPoint.x, dungeonData.startingRoom.centerPoint.y),
+                    new Vector2(room.centerPoint.x, room.centerPoint.y)
+                );
+
+                // Convertir a distancia de habitaciones (dividir por tamaño promedio de habitación)
+                room.distanceFromStart = Mathf.Max(1, Mathf.RoundToInt(euclideanDistance / 10f));
+
+                Debug.Log(
+                    $"[SpawnSystem] Assigned estimated distance {room.distanceFromStart} to disconnected room at {room.centerPoint}");
+            }
+
+            int connectedRooms = visited.Count;
+            int totalRooms = dungeonData.rooms.Count;
+            Debug.Log($"[SpawnSystem] Distance calculation complete: {connectedRooms}/{totalRooms} rooms connected");
         }
+
 
         private void AssignSpecialRoomTypes()
         {
             var availableRooms = dungeonData.rooms.Where(r => r.roomType != RoomType.StartingRoom).ToList();
-            
+
             // Asignar treasure rooms a habitaciones lejanas y grandes
             var treasureCandidates = availableRooms
                 .Where(r => r.distanceFromStart >= 3 && r.roomType == RoomType.LargeRoom)
                 .OrderByDescending(r => r.distanceFromStart)
                 .Take(Mathf.RoundToInt(availableRooms.Count * spawnSettings.generalRules.spawnDensity * 0.2f));
-            
+
             foreach (var room in treasureCandidates)
             {
                 room.roomType = RoomType.TreasureRoom;
@@ -123,10 +161,10 @@ namespace DungeonSystem.Spawning
 
             // Asignar guard rooms cerca del inicio
             var guardCandidates = availableRooms
-                .Where(r => r.distanceFromStart >= 1 && r.distanceFromStart <= 3 && 
-                           r.roomType == RoomType.MediumRoom)
+                .Where(r => r.distanceFromStart >= 1 && r.distanceFromStart <= 3 &&
+                            r.roomType == RoomType.MediumRoom)
                 .Take(Mathf.RoundToInt(availableRooms.Count * 0.3f));
-            
+
             foreach (var room in guardCandidates)
             {
                 room.roomType = RoomType.GuardRoom;
@@ -139,7 +177,7 @@ namespace DungeonSystem.Spawning
                 .Where(r => r.roomType == RoomType.LargeRoom)
                 .OrderByDescending(r => r.distanceFromStart)
                 .FirstOrDefault();
-            
+
             if (bossCandidate != null)
             {
                 bossCandidate.roomType = RoomType.BossRoom;
@@ -185,46 +223,71 @@ namespace DungeonSystem.Spawning
         {
             // Obtener configuración específica para este tipo de habitación
             roomConfigs.TryGetValue(room.roomType, out RoomTypeSpawnConfig config);
-            
-            // Filtrar enemigos apropiados para esta habitación
-            var appropriateEnemies = spawnSettings.enemySpawns.Where(enemy => 
-                enemy.GetAllowedRoomTypes().Contains(room.roomType) &&
-                room.distanceFromStart >= enemy.minDistanceFromStart &&
-                room.distanceFromStart <= enemy.maxDistanceFromStart
+
+            // ✅ FILTRO CORREGIDO - Manejar distancia -1 (habitaciones desconectadas)
+            var appropriateEnemies = spawnSettings.enemySpawns.Where(enemy =>
+                enemy.allowedRoomTypes.Contains(room.roomType) &&
+                enemy.weight > 0 && // ✅ Solo enemigos con peso > 0
+                (room.distanceFromStart == -1 || // ✅ Permitir habitaciones desconectadas
+                 (room.distanceFromStart >= enemy.minDistanceFromStart &&
+                  room.distanceFromStart <= enemy.maxDistanceFromStart))
             ).ToList();
 
-            if (appropriateEnemies.Count == 0) return;
+            if (appropriateEnemies.Count == 0)
+            {
+                Debug.LogWarning(
+                    $"[SpawnSystem] No appropriate enemies found for room type: {room.roomType} at distance: {room.distanceFromStart}");
+
+                // ✅ FALLBACK - Si no hay enemigos apropiados, usar cualquiera con weight > 0
+                appropriateEnemies = spawnSettings.enemySpawns.Where(enemy =>
+                    enemy.weight > 0 && enemy.prefab != null
+                ).ToList();
+
+                if (appropriateEnemies.Count == 0)
+                {
+                    Debug.LogError($"[SpawnSystem] No enemies with weight > 0 found in settings!");
+                    return;
+                }
+
+                Debug.Log($"[SpawnSystem] Using fallback enemies for {room.roomType}");
+            }
 
             // Calcular número de enemigos basado en tipo de habitación
             int enemyCount = CalculateEnemyCount(room, config);
-            
+
+            Debug.Log(
+                $"[SpawnSystem] Spawning {enemyCount} enemies in {room.roomType} room at distance {room.distanceFromStart}");
+
             // Aplicar lógica específica por tipo de habitación
             switch (room.roomType)
             {
                 case RoomType.GuardRoom:
                     SpawnGuardRoomEnemies(room, appropriateEnemies, enemyCount);
                     break;
-                    
+
                 case RoomType.BossRoom:
                     SpawnBossRoomEnemies(room, appropriateEnemies);
                     break;
-                    
+
                 case RoomType.TreasureRoom:
                     SpawnTreasureRoomEnemies(room, appropriateEnemies, enemyCount);
                     break;
-                    
+
                 default:
                     SpawnStandardEnemies(room, appropriateEnemies, enemyCount);
                     break;
             }
         }
 
+
+
         private void SpawnGuardRoomEnemies(Room room, List<EnemySpawnData> enemies, int count)
         {
             // Guardias prefieren estar cerca de puertas
             var doorPositions = room.doorPositions;
-            var guardEnemies = enemies.Where(e => e.enemyId.Contains("guard") || e.enemyId.Contains("soldier")).ToList();
-            
+            var guardEnemies = enemies.Where(e => e.enemyId.Contains("guard") || e.enemyId.Contains("soldier"))
+                .ToList();
+
             if (guardEnemies.Count == 0) guardEnemies = enemies;
 
             for (int i = 0; i < count && i < doorPositions.Count; i++)
@@ -303,9 +366,9 @@ namespace DungeonSystem.Spawning
         {
             // Obtener configuración específica
             roomConfigs.TryGetValue(room.roomType, out RoomTypeSpawnConfig config);
-            
+
             // Filtrar items apropiados
-            var appropriateItems = spawnSettings.itemSpawns.Where(item => 
+            var appropriateItems = spawnSettings.itemSpawns.Where(item =>
                 item.allowedRoomTypes.Contains(room.roomType) &&
                 room.distanceFromStart >= item.minDistanceFromStart &&
                 room.distanceFromStart <= item.maxDistanceFromStart
@@ -319,15 +382,15 @@ namespace DungeonSystem.Spawning
                 case RoomType.TreasureRoom:
                     SpawnTreasureItems(room, appropriateItems);
                     break;
-                    
+
                 case RoomType.Laboratory:
                     SpawnLaboratoryItems(room, appropriateItems);
                     break;
-                    
+
                 case RoomType.GuardRoom:
                     SpawnGuardRoomItems(room, appropriateItems);
                     break;
-                    
+
                 default:
                     SpawnStandardItems(room, appropriateItems);
                     break;
@@ -359,9 +422,9 @@ namespace DungeonSystem.Spawning
         private void SpawnLaboratoryItems(Room room, List<ItemSpawnData> items)
         {
             // Pociones, libros, ingredientes distribuidos por los bordes
-            var labItems = items.Where(i => 
-                i.itemId.Contains("potion") || 
-                i.itemId.Contains("book") || 
+            var labItems = items.Where(i =>
+                i.itemId.Contains("potion") ||
+                i.itemId.Contains("book") ||
                 i.itemId.Contains("ingredient")
             ).ToList();
 
@@ -378,9 +441,9 @@ namespace DungeonSystem.Spawning
         private void SpawnGuardRoomItems(Room room, List<ItemSpawnData> items)
         {
             // Armas y armaduras cerca de las puertas
-            var equipment = items.Where(i => 
-                i.itemId.Contains("weapon") || 
-                i.itemId.Contains("armor") || 
+            var equipment = items.Where(i =>
+                i.itemId.Contains("weapon") ||
+                i.itemId.Contains("armor") ||
                 i.itemId.Contains("shield")
             ).ToList();
 
@@ -400,7 +463,7 @@ namespace DungeonSystem.Spawning
         private void SpawnStandardItems(Room room, List<ItemSpawnData> items)
         {
             int itemCount = CalculateItemCount(room);
-            
+
             for (int i = 0; i < itemCount; i++)
             {
                 var item = SelectWeightedRandom(items);
@@ -416,7 +479,7 @@ namespace DungeonSystem.Spawning
         private int CalculateEnemyCount(Room room, RoomTypeSpawnConfig config)
         {
             float baseCount = Mathf.RoundToInt(room.bounds.width * room.bounds.height * 0.02f);
-            
+
             // Aplicar multiplicador por tipo de habitación
             switch (room.roomType)
             {
@@ -437,7 +500,7 @@ namespace DungeonSystem.Spawning
         private int CalculateItemCount(Room room)
         {
             float baseCount = Mathf.RoundToInt(room.bounds.width * room.bounds.height * 0.015f);
-            
+
             switch (room.roomType)
             {
                 case RoomType.SmallRoom: baseCount *= spawnSettings.generalRules.smallRoomMultiplier; break;
@@ -453,24 +516,36 @@ namespace DungeonSystem.Spawning
         private T SelectWeightedRandom<T>(List<T> items) where T : class
         {
             if (items.Count == 0) return null;
-            
+
             float totalWeight = 0f;
-            if (typeof(T) == typeof(ItemSpawnData))
-                totalWeight = items.Cast<ItemSpawnData>().Sum(i => i.weight);
-            else if (typeof(T) == typeof(EnemySpawnData))
-                totalWeight = items.Cast<EnemySpawnData>().Sum(e => e.weight);
-            else
+
+            // Calcular peso total
+            foreach (var item in items)
+            {
+                if (item is ItemSpawnData itemData)
+                    totalWeight += itemData.weight;
+                else if (item is EnemySpawnData enemyData)
+                    totalWeight += enemyData.weight;
+            }
+
+            if (totalWeight <= 0f)
+            {
+                Debug.LogWarning("[SpawnSystem] Total weight is 0 or negative, returning random item");
                 return items[Random.Range(0, items.Count)];
+            }
 
             float randomValue = Random.Range(0f, totalWeight);
             float currentWeight = 0f;
 
             foreach (var item in items)
             {
-                if (typeof(T) == typeof(ItemSpawnData))
-                    currentWeight += (item as ItemSpawnData).weight;
-                else if (typeof(T) == typeof(EnemySpawnData))
-                    currentWeight += (item as EnemySpawnData).weight;
+                float itemWeight = 0f;
+                if (item is ItemSpawnData itemData)
+                    itemWeight = itemData.weight;
+                else if (item is EnemySpawnData enemyData)
+                    itemWeight = enemyData.weight;
+
+                currentWeight += itemWeight;
 
                 if (randomValue <= currentWeight)
                     return item;
@@ -484,10 +559,10 @@ namespace DungeonSystem.Spawning
             int attempts = 20;
             while (attempts > 0)
             {
-                int x = Random.Range(Mathf.RoundToInt(room.bounds.x + 1), 
-                                   Mathf.RoundToInt(room.bounds.x + room.bounds.width - 1));
-                int y = Random.Range(Mathf.RoundToInt(room.bounds.y + 1), 
-                                   Mathf.RoundToInt(room.bounds.y + room.bounds.height - 1));
+                int x = Random.Range(Mathf.RoundToInt(room.bounds.x + 1),
+                    Mathf.RoundToInt(room.bounds.x + room.bounds.width - 1));
+                int y = Random.Range(Mathf.RoundToInt(room.bounds.y + 1),
+                    Mathf.RoundToInt(room.bounds.y + room.bounds.height - 1));
 
                 GridPosition pos = new GridPosition(x, y);
                 if (IsValidSpawnPosition(room, pos))
@@ -495,6 +570,7 @@ namespace DungeonSystem.Spawning
 
                 attempts--;
             }
+
             return GridPosition.zero;
         }
 
@@ -507,12 +583,13 @@ namespace DungeonSystem.Spawning
                 int offsetY = Random.Range(-Mathf.RoundToInt(maxDistance), Mathf.RoundToInt(maxDistance) + 1);
 
                 GridPosition pos = new GridPosition(target.x + offsetX, target.y + offsetY);
-                
+
                 if (room.bounds.Contains(new Vector2(pos.x, pos.y)) && IsValidSpawnPosition(room, pos))
                     return pos;
 
                 attempts--;
             }
+
             return GridPosition.zero;
         }
 
@@ -524,8 +601,8 @@ namespace DungeonSystem.Spawning
             // Verificar distancia mínima de otros spawns
             foreach (var spawn in spawnedItems.Concat(spawnedEnemies))
             {
-                float distance = Vector2.Distance(new Vector2(pos.x, pos.y), 
-                                                new Vector2(spawn.position.x, spawn.position.y));
+                float distance = Vector2.Distance(new Vector2(pos.x, pos.y),
+                    new Vector2(spawn.position.x, spawn.position.y));
                 if (distance < spawnSettings.generalRules.minDistanceBetweenSpawns)
                     return false;
             }
@@ -554,30 +631,37 @@ namespace DungeonSystem.Spawning
             return new List<GridPosition>
             {
                 new GridPosition(Mathf.RoundToInt(room.bounds.x + 1), Mathf.RoundToInt(room.bounds.y + 1)),
-                new GridPosition(Mathf.RoundToInt(room.bounds.x + room.bounds.width - 2), Mathf.RoundToInt(room.bounds.y + 1)),
-                new GridPosition(Mathf.RoundToInt(room.bounds.x + room.bounds.width - 2), Mathf.RoundToInt(room.bounds.y + room.bounds.height - 2)),
-                new GridPosition(Mathf.RoundToInt(room.bounds.x + 1), Mathf.RoundToInt(room.bounds.y + room.bounds.height - 2))
+                new GridPosition(Mathf.RoundToInt(room.bounds.x + room.bounds.width - 2),
+                    Mathf.RoundToInt(room.bounds.y + 1)),
+                new GridPosition(Mathf.RoundToInt(room.bounds.x + room.bounds.width - 2),
+                    Mathf.RoundToInt(room.bounds.y + room.bounds.height - 2)),
+                new GridPosition(Mathf.RoundToInt(room.bounds.x + 1),
+                    Mathf.RoundToInt(room.bounds.y + room.bounds.height - 2))
             };
         }
 
         private List<GridPosition> GetRoomEdgePositions(Room room, int spacing)
         {
             List<GridPosition> positions = new List<GridPosition>();
-            
+
             // Borde superior e inferior
-            for (int x = Mathf.RoundToInt(room.bounds.x + spacing); x < room.bounds.x + room.bounds.width - spacing; x += spacing)
+            for (int x = Mathf.RoundToInt(room.bounds.x + spacing);
+                 x < room.bounds.x + room.bounds.width - spacing;
+                 x += spacing)
             {
                 positions.Add(new GridPosition(x, Mathf.RoundToInt(room.bounds.y + 1)));
                 positions.Add(new GridPosition(x, Mathf.RoundToInt(room.bounds.y + room.bounds.height - 2)));
             }
-            
+
             // Bordes izquierdo y derecho
-            for (int y = Mathf.RoundToInt(room.bounds.y + spacing); y < room.bounds.y + room.bounds.height - spacing; y += spacing)
+            for (int y = Mathf.RoundToInt(room.bounds.y + spacing);
+                 y < room.bounds.y + room.bounds.height - spacing;
+                 y += spacing)
             {
                 positions.Add(new GridPosition(Mathf.RoundToInt(room.bounds.x + 1), y));
                 positions.Add(new GridPosition(Mathf.RoundToInt(room.bounds.x + room.bounds.width - 2), y));
             }
-            
+
             return positions;
         }
 
@@ -592,7 +676,7 @@ namespace DungeonSystem.Spawning
 
             Vector3 worldPos = new Vector3(position.x, 0, position.y);
             GameObject instance = Instantiate(enemyData.prefab, worldPos, Quaternion.identity);
-            
+
             SpawnedEntity spawn = new SpawnedEntity
             {
                 instance = instance,
@@ -601,12 +685,13 @@ namespace DungeonSystem.Spawning
                 room = room,
                 isEnemy = true
             };
-            
+
             spawnedEnemies.Add(spawn);
             room.enemySpawnPoints.Add(position);
         }
 
-        private void SpawnItemInRoom(ItemSpawnData itemData, Room room, bool isCritical, GridPosition? forcePosition = null)
+        private void SpawnItemInRoom(ItemSpawnData itemData, Room room, bool isCritical,
+            GridPosition? forcePosition = null)
         {
             if (itemData?.prefab == null) return;
 
@@ -615,7 +700,7 @@ namespace DungeonSystem.Spawning
 
             Vector3 worldPos = new Vector3(spawnPos.x, 0, spawnPos.y);
             GameObject instance = Instantiate(itemData.prefab, worldPos, Quaternion.identity);
-            
+
             SpawnedEntity spawn = new SpawnedEntity
             {
                 instance = instance,
@@ -625,7 +710,7 @@ namespace DungeonSystem.Spawning
                 isEnemy = false,
                 isCritical = isCritical
             };
-            
+
             spawnedItems.Add(spawn);
             room.itemSpawnPoints.Add(spawnPos);
         }
@@ -644,7 +729,7 @@ namespace DungeonSystem.Spawning
                 if (spawn.instance != null)
                     DestroyImmediate(spawn.instance);
             }
-            
+
             spawnedItems.Clear();
             spawnedEnemies.Clear();
         }
@@ -665,16 +750,61 @@ namespace DungeonSystem.Spawning
                 Gizmos.DrawWireCube(new Vector3(spawn.position.x, 1f, spawn.position.y), Vector3.one * 0.8f);
             }
         }
-    }
 
-    [System.Serializable]
-    public class SpawnedEntity
-    {
-        public GameObject instance;
-        public string entityId;
-        public GridPosition position;
-        public Room room;
-        public bool isEnemy;
-        public bool isCritical;
+        [ContextMenu("Debug Enemy Spawning")]
+        [ContextMenu("Debug Enemy Spawning")]
+        public void DebugEnemySpawning()
+        {
+            if (dungeonData == null)
+            {
+                Debug.Log("No dungeon data available");
+                return;
+            }
+
+            Debug.Log($"=== ENEMY SPAWN DEBUG ===");
+            Debug.Log($"Total enemy spawn configs: {spawnSettings.enemySpawns.Count}");
+
+            foreach (var enemy in spawnSettings.enemySpawns)
+            {
+                Debug.Log(
+                    $"Enemy: {enemy.enemyId}, Weight: {enemy.weight}, Prefab: {(enemy.prefab != null ? "✓" : "✗")}");
+                Debug.Log($"  - Room Types: {string.Join(", ", enemy.allowedRoomTypes)}");
+                Debug.Log($"  - Distance: {enemy.minDistanceFromStart} - {enemy.maxDistanceFromStart}");
+            }
+
+            Debug.Log($"\nRoom Analysis:");
+            int connectedRooms = 0;
+            foreach (var room in dungeonData.rooms)
+            {
+                if (room.distanceFromStart >= 0) connectedRooms++;
+
+                var validEnemies = spawnSettings.enemySpawns.Where(enemy =>
+                    enemy.allowedRoomTypes.Contains(room.roomType) &&
+                    enemy.weight > 0 &&
+                    (room.distanceFromStart == -1 ||
+                     (room.distanceFromStart >= enemy.minDistanceFromStart &&
+                      room.distanceFromStart <= enemy.maxDistanceFromStart))
+                ).ToList();
+
+                Debug.Log($"Room {room.roomType} (dist: {room.distanceFromStart}): {validEnemies.Count} valid enemies");
+            }
+
+            Debug.Log($"\nConnectivity: {connectedRooms}/{dungeonData.rooms.Count} rooms connected");
+            Debug.Log(
+                $"Starting room: {(dungeonData.startingRoom != null ? dungeonData.startingRoom.centerPoint.ToString() : "None")}");
+        }
+
+
+
+        [System.Serializable]
+        public class SpawnedEntity
+        {
+            public GameObject instance;
+            public string entityId;
+            public GridPosition position;
+            public Room room;
+            public bool isEnemy;
+            public bool isCritical;
+        }
     }
 }

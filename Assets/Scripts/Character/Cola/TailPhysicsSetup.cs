@@ -50,10 +50,26 @@ public class TailPhysicsSetup : MonoBehaviour
 
     void Start()
     {
+        StartCoroutine(DelayedStart());
+
         if (tailRoot == null || connectedTo == null)
         {
             Debug.LogError("TailPhysicsSetup: tailRoot o connectedTo no asignados.");
             return;
+        }
+
+        SetupTailPhysics();
+        ConfigurePhysicsSettings();
+    }
+
+    System.Collections.IEnumerator DelayedStart()
+    {
+        yield return new WaitForSeconds(1f); // Espera 1 segundo
+
+        if (tailRoot == null || connectedTo == null)
+        {
+            Debug.LogError("TailPhysicsSetup: tailRoot o connectedTo no asignados.");
+            yield break;
         }
 
         SetupTailPhysics();
