@@ -88,14 +88,49 @@ namespace DungeonSystem
             }
         }
 
+        /// <summary>
+        /// Coroutine version of <see cref="GenerateCompleteDungeon"/> to avoid
+        /// frame stalls when generating at runtime.
+        /// </summary>
+        public System.Collections.IEnumerator GenerateCompleteDungeonAsync()
+        {
+            if (!ValidateSettings())
+            {
+                Debug.LogError("Invalid settings - cannot generate dungeon");
+                yield break;
+            }
+
+            GenerateMapStructure();
+            yield return null;
+
+            SelectStartingPoint();
+            yield return null;
+
+            SetupInitialProgression();
+            yield return null;
+
+            PopulateWithEntities();
+            yield return null;
+
+            RenderDungeon();
+            yield return null;
+
+            if (!dungeonData.AreAllRoomsConnected())
+            {
+                Debug.LogError("Generated dungeon has disconnected rooms! Regenerating...");
+                GenerateNewSeed();
+            }
+            else
+            {
+                Debug.Log($"Dungeon generated successfully with seed: {generationSettings.seed}");
+                Debug.Log($"Rooms: {dungeonData.rooms.Count}, Doors: {dungeonData.doors.Count}, Fully connected: {IsFullyConnected}");
+            }
+        }
+
         public void GenerateMapStructure()
         {
-            dungeonData = BSPGenerator.GenerateDungeon(generationSettings);
-            rootNode    = new BSPNode(new Rect(0,0,
-                               generationSettings.dungeonWidth,
-                               generationSettings.dungeonHeight));
-            SplitAndPopulateNode(rootNode,0);
-            RoomConnector.ConnectRooms(rootNode,dungeonData,generationSettings);
+            (dungeonData, rootNode) = BSPGenerator.GenerateDungeon(generationSettings);
+            RoomConnector.ConnectRooms(rootNode, dungeonData, generationSettings);
         }
 
         public void SelectStartingPoint()
@@ -242,37 +277,6 @@ namespace DungeonSystem
         }
 
         //──────────────────────────────────────── Helpers
-        private void SplitAndPopulateNode(BSPNode node,int depth)
-        {
-            if (depth>6 || node.bounds.width < generationSettings.minRoomSize*2 ||
-                node.bounds.height< generationSettings.minRoomSize*2)
-            {
-                foreach (var room in dungeonData.rooms)
-                {
-                    if (node.bounds.Overlaps(room.bounds))
-                    { node.room = room; break; }
-                }
-                return;
-            }
-
-            bool horizontal = Random.value > .5f;
-            if (horizontal)
-            {
-                int split = Mathf.RoundToInt(node.bounds.height/2);
-                node.leftChild  = new BSPNode(new Rect(node.bounds.x,node.bounds.y,node.bounds.width,split));
-                node.rightChild = new BSPNode(new Rect(node.bounds.x,node.bounds.y+split,
-                                                       node.bounds.width,node.bounds.height-split));
-            }
-            else
-            {
-                int split = Mathf.RoundToInt(node.bounds.width/2);
-                node.leftChild  = new BSPNode(new Rect(node.bounds.x,node.bounds.y,split,node.bounds.height));
-                node.rightChild = new BSPNode(new Rect(node.bounds.x+split,node.bounds.y,
-                                                       node.bounds.width-split,node.bounds.height));
-            }
-            SplitAndPopulateNode(node.leftChild, depth+1);
-            SplitAndPopulateNode(node.rightChild,depth+1);
-        }
 
         //──────────────────────────────────────── Gizmos
         private void OnDrawGizmos()
