@@ -127,14 +127,25 @@ public abstract class UIPanel : MonoBehaviour
         LogDebug("Show animation completed");
     }
     
-    public virtual void OnHideComplete() 
+    public virtual void OnHideComplete()
     {
         LogDebug("Hide animation completed");
     }
-    
+
     #endregion
 
     #region Navigation
+
+    /// <summary>
+    /// Configura la navegación hacia el siguiente y anterior panel.
+    /// </summary>
+    /// <param name="nextID">ID del siguiente panel.</param>
+    /// <param name="previousID">ID del panel previo.</param>
+    public void SetNavigation(string nextID, string previousID)
+    {
+        nextPanelID = nextID;
+        previousPanelID = previousID;
+    }
     
     public virtual void GoToNextPanel()
     {
