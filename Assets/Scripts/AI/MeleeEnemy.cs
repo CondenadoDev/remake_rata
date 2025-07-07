@@ -1,4 +1,4 @@
-/*using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 public class MeleeEnemy : EnemyBase
@@ -134,12 +134,12 @@ public class MeleeEnemy : EnemyBase
         Vector3 retreatDir = (transform.position - player.position).normalized;
         Vector3 startPos = transform.position;
         Vector3 targetPos = startPos + retreatDir * retreatDistance;
-        targetPos = ForzarPosicionY(targetPos);
+        //targetPos = ForzarPosicionY(targetPos);
         float elapsed = 0f;
         while (elapsed < retreatDuration)
         {
             elapsed += Time.deltaTime;
-            transform.position = ForzarPosicionY(Vector3.Lerp(startPos, targetPos, elapsed / retreatDuration));
+            //transform.position = ForzarPosicionY(Vector3.Lerp(startPos, targetPos, elapsed / retreatDuration));
             yield return null;
         }
     }
@@ -159,12 +159,12 @@ public class MeleeEnemy : EnemyBase
         isStunned = true;
         Vector3 startPos = transform.position;
         Vector3 targetPos = startPos + knockbackDir * knockbackDistance;
-        targetPos = ForzarPosicionY(targetPos);
+        //targetPos = ForzarPosicionY(targetPos);
         float elapsed = 0f;
         while (elapsed < knockbackTime)
         {
             elapsed += Time.deltaTime;
-            transform.position = ForzarPosicionY(Vector3.Lerp(startPos, targetPos, elapsed / knockbackTime));
+            //transform.position = ForzarPosicionY(Vector3.Lerp(startPos, targetPos, elapsed / knockbackTime));
             yield return null;
         }
         yield return new WaitForSeconds(stunDuration);
@@ -186,4 +186,4 @@ public class MeleeEnemy : EnemyBase
         Gizmos.color = Color.blue;
         Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
     }
-}*/ 
+}

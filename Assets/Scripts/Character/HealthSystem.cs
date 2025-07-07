@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Necesario para cargar escenas
+using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 using System.Collections;
 
@@ -16,6 +16,9 @@ public class HealthSystem : MonoBehaviour
 
     public HealthChangedEvent OnHealthChanged;
     public DeathEvent OnDeath;
+
+    // 🆕 Evento global estático
+    public static event System.Action OnAnyPlayerDeath;
 
     [Header("Invencibilidad")]
     public float invincibilityDuration = 0.5f;
@@ -43,12 +46,17 @@ public class HealthSystem : MonoBehaviour
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
+        if (GetComponent<PlayerController>() != null)
+        {
+            GameEvents.TriggerPlayerHealthChanged(currentHealth);
+        }
+
         if (rend != null)
         {
             StartCoroutine(FlashDamage());
         }
 
-        // Llama a OnDamageTaken en otros componentes (por ejemplo, MeleeEnemy)
+        // Notifica a otros componentes
         SendMessage("OnDamageTaken", damage, SendMessageOptions.DontRequireReceiver);
 
         if (currentHealth <= 0)
@@ -80,17 +88,20 @@ public class HealthSystem : MonoBehaviour
         Debug.Log($"{name} ha muerto.");
         OnDeath?.Invoke();
 
-        // ¿Es el jugador?
-        if (GetComponent<PlayerController>() != null)
+        bool isPlayer = GetComponent<PlayerController>() != null;
+
+        if (isPlayer)
         {
-            SceneManager.LoadScene("Lobby");   // solo el jugador reinicia-escena
+            GameEvents.TriggerPlayerHealthChanged(0);
+            GameEvents.TriggerPlayerDied();
+            OnAnyPlayerDeath?.Invoke(); // 🆕 Evento global para GameManager
         }
         else
         {
-            Destroy(gameObject);               // enemigo: solo se destruye
+            GameEvents.TriggerEnemyKilled(gameObject);
+            Destroy(gameObject);
         }
     }
-
 
     public float GetCurrentHealth()
     {
