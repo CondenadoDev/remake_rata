@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -37,6 +38,8 @@ public class CompleteUIGenerator : MonoBehaviour
     private EventSystem eventSystem;
     private Dictionary<string, GameObject> createdPanels = new Dictionary<string, GameObject>();
     private List<ConcreteUIPanel> allPanels = new List<ConcreteUIPanel>();
+    private Image loadingFillImage;
+    private Coroutine loadingCoroutine;
     
     void Start()
     {
@@ -155,11 +158,12 @@ public class CompleteUIGenerator : MonoBehaviour
     void CreateUIManager()
     {
         LogDebug("🎮 Creating UI Manager...");
-        
+
         GameObject uiManagerGO = new GameObject("UI Manager");
+        uiManagerGO.SetActive(false); // Delay Awake until panels are configured
         uiManager = uiManagerGO.AddComponent<UIManager>();
-        
-        LogDebug("✅ UI Manager created");
+
+        LogDebug("✅ UI Manager created (inactive)");
     }
     
     void GenerateAllPanels()
@@ -207,9 +211,9 @@ public class CompleteUIGenerator : MonoBehaviour
         // Agregar componente UIPanel concreto
         ConcreteUIPanel uiPanel = panelGO.AddComponent<ConcreteUIPanel>();
         uiPanel.panelID = panelID;
-        uiPanel.startVisible = startVisible;
-        uiPanel.useScaleAnimation = panelID != "HUD";
-        uiPanel.blockGameInput = panelID != "HUD";
+        uiPanel.startVisibleSetting = startVisible;
+        uiPanel.useScaleAnimationSetting = panelID != "HUD";
+        uiPanel.blockGameInputSetting = panelID != "HUD";
         
         panelGO.SetActive(startVisible);
         
@@ -380,11 +384,19 @@ public class CompleteUIGenerator : MonoBehaviour
         CreateTitle(panel.transform, "GAME TITLE", new Vector2(0, 200));
         
         // Buttons
-        Button newGameBtn = CreateButton(panel.transform, "NUEVO JUEGO", new Vector2(0, 50), new Vector2(300, 60), 
-            () => Debug.Log("Nueva partida"));
+        Button newGameBtn = CreateButton(panel.transform, "NUEVO JUEGO", new Vector2(0, 50), new Vector2(300, 60),
+            () => {
+                uiManager?.ShowPanel("Loading");
+                if (loadingCoroutine != null) StopCoroutine(loadingCoroutine);
+                loadingCoroutine = StartCoroutine(SimulateLoading());
+            });
         
-        CreateButton(panel.transform, "CARGAR JUEGO", new Vector2(0, -20), new Vector2(300, 60), 
-            () => Debug.Log("Cargar partida"));
+        CreateButton(panel.transform, "CARGAR JUEGO", new Vector2(0, -20), new Vector2(300, 60),
+            () => {
+                uiManager?.ShowPanel("Loading");
+                if (loadingCoroutine != null) StopCoroutine(loadingCoroutine);
+                loadingCoroutine = StartCoroutine(SimulateLoading());
+            });
         
         CreateButton(panel.transform, "OPCIONES", new Vector2(0, -90), new Vector2(300, 60), 
             () => uiManager?.ShowPanel("OptionsMain"));
@@ -491,7 +503,7 @@ public class CompleteUIGenerator : MonoBehaviour
         
         // Health bar (top left)
         CreateProgressBar(panel.transform, "Salud", new Vector2(-700, 400), new Vector2(200, 20), Color.red);
-        
+
         // Stamina bar (below health)
         CreateProgressBar(panel.transform, "Stamina", new Vector2(-700, 360), new Vector2(200, 20), Color.yellow);
         
@@ -541,7 +553,7 @@ public class CompleteUIGenerator : MonoBehaviour
         CreateTitle(panel.transform, "CARGANDO...", new Vector2(0, 50));
         
         // Loading bar
-        CreateProgressBar(panel.transform, "", new Vector2(0, -50), new Vector2(400, 30), primaryColor);
+        loadingFillImage = CreateProgressBar(panel.transform, "", new Vector2(0, -50), new Vector2(400, 30), primaryColor);
     }
     
     void CreateTitle(Transform parent, string text, Vector2 position)
@@ -569,7 +581,7 @@ public class CompleteUIGenerator : MonoBehaviour
         }
     }
     
-    void CreateProgressBar(Transform parent, string labelText, Vector2 position, Vector2 size, Color barColor)
+    Image CreateProgressBar(Transform parent, string labelText, Vector2 position, Vector2 size, Color barColor)
     {
         GameObject barGO = new GameObject($"ProgressBar_{labelText}");
         barGO.transform.SetParent(parent, false);
@@ -619,6 +631,8 @@ public class CompleteUIGenerator : MonoBehaviour
             labelComponent.fontSize = 16;
             labelComponent.alignment = TextAlignmentOptions.Center;
         }
+
+        return fillImage;
     }
     
     System.Collections.IEnumerator SelectButtonDelayed(Button button)
@@ -634,17 +648,20 @@ public class CompleteUIGenerator : MonoBehaviour
     void SetupNavigation()
     {
         LogDebug("🧭 Setting up panel navigation...");
-        
+
+        SetPanelNavigation("MainMenu", "OptionsMain", "");
         SetPanelNavigation("OptionsMain", "", "MainMenu");
         SetPanelNavigation("AudioOptions", "", "OptionsMain");
         SetPanelNavigation("GraphicsOptions", "", "OptionsMain");
         SetPanelNavigation("ControlsOptions", "", "OptionsMain");
         SetPanelNavigation("GameplayOptions", "", "OptionsMain");
         SetPanelNavigation("PauseMenu", "", "HUD");
-        
+        SetPanelNavigation("HUD", "PauseMenu", "");
+        SetPanelNavigation("Loading", "HUD", "");
+
         LogDebug("✅ Navigation configured");
     }
-    
+
     void SetPanelNavigation(string panelID, string nextID, string previousID)
     {
         if (createdPanels.TryGetValue(panelID, out GameObject panelGO))
@@ -652,16 +669,33 @@ public class CompleteUIGenerator : MonoBehaviour
             ConcreteUIPanel panel = panelGO.GetComponent<ConcreteUIPanel>();
             if (panel != null)
             {
-                panel.nextPanelID = nextID ?? "";
-                panel.previousPanelID = previousID ?? "";
+                panel.SetNavigation(nextID ?? "", previousID ?? "");
             }
         }
+    }
+
+    IEnumerator SimulateLoading()
+    {
+        if (loadingFillImage == null)
+            yield break;
+
+        loadingFillImage.fillAmount = 0f;
+        float duration = 2f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            loadingFillImage.fillAmount = Mathf.Clamp01(elapsed / duration);
+            yield return null;
+        }
+
+        uiManager?.ShowPanel("HUD");
     }
     
     void ConfigureUIManager()
     {
         LogDebug("📋 Configuring UIManager...");
-        
+
         if (uiManager != null)
         {
             // Crear array de UIPanel para UIManager
@@ -683,6 +717,12 @@ public class CompleteUIGenerator : MonoBehaviour
             else
             {
                 LogDebug("⚠️ Could not find uiPanels field in UIManager");
+            }
+
+            // Activate UIManager now that panels are configured
+            if (!uiManager.gameObject.activeSelf)
+            {
+                uiManager.gameObject.SetActive(true);
             }
         }
     }
@@ -786,11 +826,11 @@ public class CompleteUIGenerator : MonoBehaviour
 public class ConcreteUIPanel : UIPanel
 {
     [Header("🎯 Panel Configuration")]
-    public bool startVisible = false;
-    public bool useScaleAnimation = true;
-    public bool blockGameInput = true;
-    public string nextPanelID = "";
-    public string previousPanelID = "";
+    public bool startVisibleSetting = false;
+    public bool useScaleAnimationSetting = true;
+    public bool blockGameInputSetting = true;
+    public string nextPanelIDSetting = "";
+    public string previousPanelIDSetting = "";
     
     protected override void OnInitialize()
     {
@@ -806,11 +846,11 @@ public class ConcreteUIPanel : UIPanel
         var prevField = typeof(UIPanel).GetField("previousPanelID", 
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         
-        startVisibleField?.SetValue(this, startVisible);
-        useScaleField?.SetValue(this, useScaleAnimation);
-        blockInputField?.SetValue(this, blockGameInput);
-        nextField?.SetValue(this, nextPanelID);
-        prevField?.SetValue(this, previousPanelID);
+        startVisibleField?.SetValue(this, startVisibleSetting);
+        useScaleField?.SetValue(this, useScaleAnimationSetting);
+        blockInputField?.SetValue(this, blockGameInputSetting);
+        nextField?.SetValue(this, nextPanelIDSetting);
+        prevField?.SetValue(this, previousPanelIDSetting);
         
         Debug.Log($"🎨 [ConcreteUIPanel] Initialized panel: {panelID}");
     }
