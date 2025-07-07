@@ -6,14 +6,15 @@ public abstract class UIPanel : MonoBehaviour
 {
     [Header("🎨 Panel Settings")]
     public string panelID;
-    [SerializeField] protected bool startVisible = false;
-    [SerializeField] protected bool useScaleAnimation = true;
-    [SerializeField] protected bool blockGameInput = true;
+    [SerializeField] public bool startVisible = false;
+    [SerializeField] public bool useScaleAnimation = true;
+    [SerializeField] public bool blockGameInput = true;
     [SerializeField] protected bool enableDebugLogs = true;
     
     [Header("🎯 Navigation")]
-    [SerializeField] protected string nextPanelID;
-    [SerializeField] protected string previousPanelID;
+    [SerializeField]
+    public string nextPanelID;
+    [SerializeField] public string previousPanelID;
     
     // Componentes
     private CanvasGroup canvasGroup;
@@ -31,43 +32,41 @@ public abstract class UIPanel : MonoBehaviour
     public System.Action OnPanelClosed;
     
     #region Initialization
-    
+    protected virtual void Awake()
+    {
+        if (!isInitialized)
+            Initialize();
+    }
+
     public virtual void Initialize()
     {
         try
         {
             LogDebug("Initializing...");
-            
-            // Validar Panel ID
+
             if (string.IsNullOrEmpty(panelID))
             {
                 Debug.LogWarning($"⚠️ [UIPanel] Panel ID is empty on {gameObject.name}, using GameObject name as fallback");
                 panelID = gameObject.name;
             }
-            
-            // Obtener o crear CanvasGroup
+
             canvasGroup = GetComponent<CanvasGroup>();
             if (canvasGroup == null)
             {
                 LogDebug("Creating CanvasGroup component");
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
             }
-            
-            // Estado inicial
-            SetVisible(startVisible);
-            gameObject.SetActive(startVisible);
-            
-            // Configuración inicial
-            if (!startVisible)
-            {
-                canvasGroup.alpha = 0f;
-                canvasGroup.blocksRaycasts = false;
-            }
-            
-            // Llamar inicialización específica
+
+            // Activar objeto ANTES de visibilidad
+            gameObject.SetActive(true);
+
+            // Inicializar campos internos y OnInitialize
             OnInitialize();
-            
             isInitialized = true;
+
+            // Aplicar visibilidad inicial correctamente
+            SetVisible(startVisible);
+
             LogDebug($"Successfully initialized (ID: {panelID})");
         }
         catch (System.Exception e)
@@ -76,6 +75,7 @@ public abstract class UIPanel : MonoBehaviour
             isInitialized = false;
         }
     }
+
     
     protected virtual void OnInitialize() { }
     
@@ -213,4 +213,12 @@ public abstract class UIPanel : MonoBehaviour
     }
     
     #endregion
+    
+    public void ConfigureSettings(bool startVisible, bool useScaleAnim, bool blockInput)
+    {
+        this.startVisible = startVisible;
+        this.useScaleAnimation = useScaleAnim;
+        this.blockGameInput = blockInput;
+    }
+
 }

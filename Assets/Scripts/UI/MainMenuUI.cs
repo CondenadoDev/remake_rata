@@ -27,7 +27,7 @@ public class MainMenuUI : MonoBehaviour
     const string VOL_KEY = "MasterVol";
     private bool isInitialized = false;
 
-    void Start()
+    public void Start()
     {
         StartCoroutine(InitializeAsync());
     }

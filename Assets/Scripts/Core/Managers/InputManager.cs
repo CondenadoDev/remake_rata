@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Collections;
+using InputConfig = InputConfig;
 
 public class InputManager : MonoBehaviour
 {
@@ -266,24 +267,27 @@ public class InputManager : MonoBehaviour
     void HandleLookInput(Vector2 input)
     {
         if (currentContext != InputContext.Gameplay) return;
-        
-        // Aplicar sensibilidad
-        float sensitivity = Gamepad.current != null ? 
-            ConfigurationManager.Input.gamepadSensitivity : 
+
+        if (ConfigurationManager.Instance == null || ConfigurationManager.Input == null)
+        {
+            Debug.LogError("❌ ConfigurationManager o su InputConfig están null.");
+            return;
+        }
+
+        float sensitivity = Gamepad.current != null ?
+            ConfigurationManager.Input.gamepadSensitivity :
             ConfigurationManager.Input.mouseSensitivity;
-            
-        input *= sensitivity;
-        
-        // Invertir Y si está configurado
-        bool invertY = Gamepad.current != null ? 
-            ConfigurationManager.Input.invertGamepadY : 
+
+        bool invertY = Gamepad.current != null ?
+            ConfigurationManager.Input.invertGamepadY :
             ConfigurationManager.Input.invertMouseY;
-            
+
         if (invertY)
             input.y = -input.y;
-        
+
         OnLookInput?.Invoke(input);
     }
+
     
     void HandleTargetLockInput()
     {
