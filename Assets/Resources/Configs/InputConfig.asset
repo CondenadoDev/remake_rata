@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2c17c58f43d48b5ab93af20320dd3b1, type: 3}
+  m_Name: InputConfig
+  m_EditorClassIdentifier: 
+  description: 
+  enableDebugLogs: 0
+  mouseSensitivity: 2
+  invertMouseY: 0
+  enableMouseSmoothing: 1
+  mouseSmoothing: 5
+  gamepadSensitivity: 1.5
+  invertGamepadY: 0
+  gamepadDeadzone: 0.1
+  enableGamepadVibration: 1
+  enableKeyRepeat: 1
+  keyRepeatDelay: 0.5
+  keyRepeatRate: 0.1
+  enableAutoAim: 0
+  autoAimStrength: 0.3
+  autoAimRange: 10
+  doubleClickTime: 0.3
+  holdTime: 0.5
+  bufferInputs: 1
+  inputBufferTime: 0.2

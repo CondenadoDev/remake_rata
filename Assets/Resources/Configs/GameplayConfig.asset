@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9fdfd80cb054bf58582de5874557a5a, type: 3}
+  m_Name: GameplayConfig
+  m_EditorClassIdentifier: 
+  description: 
+  enableDebugLogs: 0
+  globalTimeScale: 1
+  allowPausing: 1
+  pauseOnFocusLoss: 1
+  respawnDelay: 2
+  loseProgressOnDeath: 0
+  deathPenaltyMultiplier: 0.1
+  globalDamageMultiplier: 1
+  experienceMultiplier: 1
+  lootDropMultiplier: 1
+  goldMultiplier: 1
+  defaultDifficulty: 1
+  allowDifficultyChange: 1
+  difficultyScaling: 1
+  autoSaveEnabled: 1
+  autoSaveInterval: 300
+  maxSaveSlots: 3
+  showFPS: 0
+  showDebugInfo: 0
+  godModeAvailable: 0
+  unlockAllAreas: 0

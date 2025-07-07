@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     [Header("🎮 Core References")]
-    public PlayerController player;
+    public PlayerStateMachine  player;
     public Transform playerSpawnPoint;
     
     [Header("📊 Game State")]

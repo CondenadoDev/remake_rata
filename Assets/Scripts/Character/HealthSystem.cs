@@ -46,7 +46,8 @@ public class HealthSystem : MonoBehaviour
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
-        if (GetComponent<PlayerController>() != null)
+        // ✅ CORREGIDO: PlayerController → PlayerStateMachine
+        if (GetComponent<PlayerStateMachine>() != null)
         {
             GameEvents.TriggerPlayerHealthChanged(currentHealth);
         }
@@ -88,7 +89,8 @@ public class HealthSystem : MonoBehaviour
         Debug.Log($"{name} ha muerto.");
         OnDeath?.Invoke();
 
-        bool isPlayer = GetComponent<PlayerController>() != null;
+        // ✅ CORREGIDO: PlayerController → PlayerStateMachine
+        bool isPlayer = GetComponent<PlayerStateMachine>() != null;
 
         if (isPlayer)
         {

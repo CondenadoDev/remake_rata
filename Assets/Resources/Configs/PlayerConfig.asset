@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 495604b3df074f99a4596fc8b554e3ff, type: 3}
+  m_Name: PlayerConfig
+  m_EditorClassIdentifier: 
+  description: 
+  enableDebugLogs: 0
+  walkSpeed: 2
+  runSpeed: 5
+  rotationSpeed: 10
+  acceleration: 15
+  deceleration: 20
+  dodgeDuration: 0.5
+  dodgeSpeed: 10
+  dodgeCooldown: 1
+  invulnerabilityDuration: 0.3
+  attackDamage: 25
+  attackCooldown: 0.6
+  comboWindow: 1.5
+  maxComboCount: 3
+  maxHealth: 100
+  healthRegenRate: 5
+  healthRegenDelay: 3
+  maxStamina: 100
+  staminaRegenRate: 20
+  staminaRegenDelay: 1
+  runStaminaCost: 15
+  dodgeStaminaCost: 25
+  attackStaminaCost: 10
+  lockOnRange: 15
+  lockOnLoseRange: 20
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
