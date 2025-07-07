@@ -1,4 +1,3 @@
-// HUDPanel.cs - Panel principal del HUD
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -26,6 +25,7 @@ public class HUDPanel : UIPanel
     
     private Coroutine comboPanelCoroutine;
     private Coroutine damageFlashCoroutine;
+    private bool isSubscribedToEvents = false;
     
     protected override void OnInitialize()
     {
@@ -33,73 +33,163 @@ public class HUDPanel : UIPanel
         startVisible = true;
         useScaleAnimation = false;
         
-        // Suscribirse a eventos del jugador
-        PlayerStats.OnHealthChanged += UpdateHealthBar;
-        PlayerStats.OnStaminaChanged += UpdateStaminaBar;
-        
-        // Configurar elementos iniciales
         SetupInitialState();
+        LogDebug("HUD Panel initialized");
+    }
+    
+    void OnEnable()
+    {
+        SubscribeToEvents();
+    }
+    
+    void OnDisable()
+    {
+        UnsubscribeFromEvents();
+    }
+    
+    void SubscribeToEvents()
+    {
+        if (isSubscribedToEvents) return;
+        
+        try
+        {
+            UIEvents.OnHealthChanged += UpdateHealthBar;
+            UIEvents.OnStaminaChanged += UpdateStaminaBar;
+            UIEvents.OnComboChanged += ShowComboCount;
+            UIEvents.OnShowInteractionPrompt += ShowInteractionPrompt;
+            UIEvents.OnHideInteractionPrompt += HideInteractionPrompt;
+            
+            isSubscribedToEvents = true;
+            LogDebug("Subscribed to UI events");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to subscribe to events: {e.Message}");
+        }
+    }
+    
+    void UnsubscribeFromEvents()
+    {
+        if (!isSubscribedToEvents) return;
+        
+        try
+        {
+            UIEvents.OnHealthChanged -= UpdateHealthBar;
+            UIEvents.OnStaminaChanged -= UpdateStaminaBar;
+            UIEvents.OnComboChanged -= ShowComboCount;
+            UIEvents.OnShowInteractionPrompt -= ShowInteractionPrompt;
+            UIEvents.OnHideInteractionPrompt -= HideInteractionPrompt;
+            
+            isSubscribedToEvents = false;
+            LogDebug("Unsubscribed from UI events");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to unsubscribe from events: {e.Message}");
+        }
     }
     
     void SetupInitialState()
     {
-        if (comboPanel != null)
-            comboPanel.SetActive(false);
-            
-        if (damageOverlay != null)
+        try
         {
-            damageOverlay.color = new Color(damageColor.r, damageColor.g, damageColor.b, 0f);
+            if (comboPanel != null)
+                comboPanel.SetActive(false);
+                
+            if (damageOverlay != null)
+            {
+                damageOverlay.color = new Color(damageColor.r, damageColor.g, damageColor.b, 0f);
+            }
+            
+            if (interactionPrompt != null)
+                interactionPrompt.gameObject.SetActive(false);
+            
+            // Inicializar barras con valores por defecto
+            if (healthBar != null)
+                healthBar.value = 1f;
+            if (staminaBar != null)
+                staminaBar.value = 1f;
+                
+            LogDebug("Initial state setup completed");
         }
-        
-        if (interactionPrompt != null)
-            interactionPrompt.gameObject.SetActive(false);
+        catch (System.Exception e)
+        {
+            LogError($"Failed to setup initial state: {e.Message}");
+        }
     }
     
     void UpdateHealthBar(float currentHealth, float maxHealth)
     {
-        if (healthBar != null)
+        try
         {
-            healthBar.value = currentHealth / maxHealth;
+            if (healthBar != null && maxHealth > 0)
+            {
+                float normalizedHealth = currentHealth / maxHealth;
+                healthBar.value = normalizedHealth;
+                LogDebug($"Health bar updated: {normalizedHealth:F2}");
+            }
+            
+            if (healthText != null)
+            {
+                healthText.text = $"{Mathf.Ceil(currentHealth)}/{Mathf.Ceil(maxHealth)}";
+            }
+            
+            // Efecto de daño
+            if (currentHealth < maxHealth)
+            {
+                ShowDamageEffect();
+            }
         }
-        
-        if (healthText != null)
+        catch (System.Exception e)
         {
-            healthText.text = $"{Mathf.Ceil(currentHealth)}/{Mathf.Ceil(maxHealth)}";
-        }
-        
-        // Efecto de daño
-        if (currentHealth < maxHealth)
-        {
-            ShowDamageEffect();
+            LogError($"Failed to update health bar: {e.Message}");
         }
     }
     
     void UpdateStaminaBar(float currentStamina, float maxStamina)
     {
-        if (staminaBar != null)
+        try
         {
-            staminaBar.value = currentStamina / maxStamina;
+            if (staminaBar != null && maxStamina > 0)
+            {
+                float normalizedStamina = currentStamina / maxStamina;
+                staminaBar.value = normalizedStamina;
+                LogDebug($"Stamina bar updated: {normalizedStamina:F2}");
+            }
+            
+            if (staminaText != null)
+            {
+                staminaText.text = $"{Mathf.Ceil(currentStamina)}/{Mathf.Ceil(maxStamina)}";
+            }
         }
-        
-        if (staminaText != null)
+        catch (System.Exception e)
         {
-            staminaText.text = $"{Mathf.Ceil(currentStamina)}/{Mathf.Ceil(maxStamina)}";
+            LogError($"Failed to update stamina bar: {e.Message}");
         }
     }
     
     public void ShowComboCount(int comboCount)
     {
-        if (comboPanel != null && comboCountText != null)
+        try
         {
-            comboPanel.SetActive(true);
-            comboCountText.text = $"COMBO x{comboCount}";
-            
-            // Cancelar el hide anterior
-            if (comboPanelCoroutine != null)
-                StopCoroutine(comboPanelCoroutine);
+            if (comboPanel != null && comboCountText != null)
+            {
+                comboPanel.SetActive(true);
+                comboCountText.text = $"COMBO x{comboCount}";
                 
-            // Programar hide
-            comboPanelCoroutine = StartCoroutine(HideComboPanelAfterDelay());
+                // Cancelar el hide anterior
+                if (comboPanelCoroutine != null)
+                    StopCoroutine(comboPanelCoroutine);
+                    
+                // Programar hide
+                comboPanelCoroutine = StartCoroutine(HideComboPanelAfterDelay());
+                
+                LogDebug($"Combo panel shown: x{comboCount}");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to show combo count: {e.Message}");
         }
     }
     
@@ -108,17 +198,28 @@ public class HUDPanel : UIPanel
         yield return new WaitForSeconds(comboPanelHideDelay);
         
         if (comboPanel != null)
+        {
             comboPanel.SetActive(false);
+            LogDebug("Combo panel hidden");
+        }
     }
     
     void ShowDamageEffect()
     {
-        if (damageOverlay != null)
+        try
         {
-            if (damageFlashCoroutine != null)
-                StopCoroutine(damageFlashCoroutine);
-                
-            damageFlashCoroutine = StartCoroutine(DamageFlashEffect());
+            if (damageOverlay != null)
+            {
+                if (damageFlashCoroutine != null)
+                    StopCoroutine(damageFlashCoroutine);
+                    
+                damageFlashCoroutine = StartCoroutine(DamageFlashEffect());
+                LogDebug("Damage effect triggered");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to show damage effect: {e.Message}");
         }
     }
     
@@ -138,22 +239,39 @@ public class HUDPanel : UIPanel
         }
         
         damageOverlay.color = endColor;
+        LogDebug("Damage flash effect completed");
     }
     
     public void ShowInteractionPrompt(string text)
     {
-        if (interactionPrompt != null)
+        try
         {
-            interactionPrompt.text = text;
-            interactionPrompt.gameObject.SetActive(true);
+            if (interactionPrompt != null && !string.IsNullOrEmpty(text))
+            {
+                interactionPrompt.text = text;
+                interactionPrompt.gameObject.SetActive(true);
+                LogDebug($"Interaction prompt shown: {text}");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to show interaction prompt: {e.Message}");
         }
     }
     
     public void HideInteractionPrompt()
     {
-        if (interactionPrompt != null)
+        try
         {
-            interactionPrompt.gameObject.SetActive(false);
+            if (interactionPrompt != null)
+            {
+                interactionPrompt.gameObject.SetActive(false);
+                LogDebug("Interaction prompt hidden");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to hide interaction prompt: {e.Message}");
         }
     }
     
@@ -161,20 +279,25 @@ public class HUDPanel : UIPanel
     {
         // Habilitar cursor del juego si existe
         if (crosshair != null)
+        {
             crosshair.gameObject.SetActive(true);
+            LogDebug("Game cursor enabled");
+        }
     }
     
     protected override void OnHide()
     {
         // Deshabilitar cursor del juego
         if (crosshair != null)
+        {
             crosshair.gameObject.SetActive(false);
+            LogDebug("Game cursor disabled");
+        }
     }
     
     void OnDestroy()
     {
-        // Desuscribirse de eventos
-        PlayerStats.OnHealthChanged -= UpdateHealthBar;
-        PlayerStats.OnStaminaChanged -= UpdateStaminaBar;
+        UnsubscribeFromEvents();
+        LogDebug("HUD Panel destroyed");
     }
 }

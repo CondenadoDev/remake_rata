@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
+using UnityEngine.Events;
 
 public class OptionsMenuPanel : UIPanel
 {
@@ -26,13 +28,18 @@ public class OptionsMenuPanel : UIPanel
     [Header("🔙 Navigation")]
     [SerializeField] private Button backButton;
     [SerializeField] private Button resetToDefaultsButton;
+    [SerializeField] private Button applyButton;
     
-    [Header("🔙 Category")]
-    [SerializeField] GameObject categorySelectorPanel;
-    [SerializeField] GameObject audioPanel;
-    [SerializeField] GameObject graphicsPanel;
-    [SerializeField] GameObject gameplayPanel;
-    [SerializeField] GameObject controlsPanel;
+    [Header("📂 Categories")]
+    [SerializeField] private GameObject categorySelectorPanel;
+    [SerializeField] private GameObject audioPanel;
+    [SerializeField] private GameObject graphicsPanel;
+    [SerializeField] private GameObject gameplayPanel;
+    [SerializeField] private GameObject controlsPanel;
+    
+    // State tracking
+    private bool isLoadingSettings = false;
+    private Resolution[] availableResolutions;
 
     protected override void OnInitialize()
     {
@@ -42,176 +49,371 @@ public class OptionsMenuPanel : UIPanel
         blockGameInput = true;
         
         SetupControls();
+        PopulateDropdowns();
         LoadCurrentSettings();
+        
+        LogDebug("Options Menu Panel initialized");
     }
     
     void SetupControls()
     {
-        // Audio sliders
-        if (masterVolumeSlider != null)
-            masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
-        if (musicVolumeSlider != null)
-            musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
-        if (sfxVolumeSlider != null)
-            sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
-        
-        // Graphics controls
-        if (qualityDropdown != null)
-            qualityDropdown.onValueChanged.AddListener(OnQualityChanged);
-        if (resolutionDropdown != null)
-            resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
-        if (fullscreenToggle != null)
-            fullscreenToggle.onValueChanged.AddListener(OnFullscreenChanged);
-        if (vSyncToggle != null)
-            vSyncToggle.onValueChanged.AddListener(OnVSyncChanged);
-        
-        // Input controls
-        if (mouseSensitivitySlider != null)
-            mouseSensitivitySlider.onValueChanged.AddListener(OnMouseSensitivityChanged);
-        if (invertMouseYToggle != null)
-            invertMouseYToggle.onValueChanged.AddListener(OnInvertMouseYChanged);
-        
-        // Buttons
-        if (backButton != null)
-            backButton.onClick.AddListener(GoBack);
-        if (resetToDefaultsButton != null)
-            resetToDefaultsButton.onClick.AddListener(ResetToDefaults);
-        
-        // Populate dropdowns
-        PopulateQualityDropdown();
-        PopulateResolutionDropdown();
+        try
+        {
+            // Audio sliders - usando métodos directos en lugar de diccionario
+            SetupSlider(masterVolumeSlider, OnMasterVolumeChanged);
+            SetupSlider(musicVolumeSlider, OnMusicVolumeChanged);
+            SetupSlider(sfxVolumeSlider, OnSFXVolumeChanged);
+            SetupSlider(mouseSensitivitySlider, OnMouseSensitivityChanged);
+            
+            // Graphics controls
+            SetupDropdown(qualityDropdown, OnQualityChanged);
+            SetupDropdown(resolutionDropdown, OnResolutionChanged);
+            SetupToggle(fullscreenToggle, OnFullscreenChanged);
+            SetupToggle(vSyncToggle, OnVSyncChanged);
+            
+            // Input controls
+            SetupToggle(invertMouseYToggle, OnInvertMouseYChanged);
+            
+            // Buttons
+            SetupButton(backButton, GoBack);
+            SetupButton(resetToDefaultsButton, ResetToDefaults);
+            SetupButton(applyButton, ApplySettings);
+            
+            LogDebug("Controls setup completed");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to setup controls: {e.Message}");
+        }
+    }
+    
+    void SetupSlider(Slider slider, UnityAction<float> callback)
+    {
+        if (slider != null && callback != null)
+        {
+            slider.onValueChanged.AddListener(callback);
+            LogDebug($"Slider configured: {slider.name}");
+        }
+    }
+    
+    void SetupDropdown(TMP_Dropdown dropdown, UnityAction<int> callback)
+    {
+        if (dropdown != null && callback != null)
+        {
+            dropdown.onValueChanged.AddListener(callback);
+            LogDebug($"Dropdown configured: {dropdown.name}");
+        }
+    }
+    
+    void SetupToggle(Toggle toggle, UnityAction<bool> callback)
+    {
+        if (toggle != null && callback != null)
+        {
+            toggle.onValueChanged.AddListener(callback);
+            LogDebug($"Toggle configured: {toggle.name}");
+        }
+    }
+    
+    void SetupButton(Button button, UnityAction callback)
+    {
+        if (button != null && callback != null)
+        {
+            button.onClick.AddListener(callback);
+            LogDebug($"Button configured: {button.name}");
+        }
+    }
+    
+    void PopulateDropdowns()
+    {
+        try
+        {
+            PopulateQualityDropdown();
+            PopulateResolutionDropdown();
+            LogDebug("Dropdowns populated");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to populate dropdowns: {e.Message}");
+        }
     }
     
     void LoadCurrentSettings()
     {
-        if (AudioManager.Instance != null)
-        {
-            var volumeSettings = AudioManager.Instance.GetVolumeSettings();
-            
-            if (masterVolumeSlider != null)
-            {
-                masterVolumeSlider.value = volumeSettings.masterVolume;
-                UpdateVolumeText(masterVolumeText, volumeSettings.masterVolume);
-            }
-            if (musicVolumeSlider != null)
-            {
-                musicVolumeSlider.value = volumeSettings.musicVolume;
-                UpdateVolumeText(musicVolumeText, volumeSettings.musicVolume);
-            }
-            if (sfxVolumeSlider != null)
-            {
-                sfxVolumeSlider.value = volumeSettings.sfxVolume;
-                UpdateVolumeText(sfxVolumeText, volumeSettings.sfxVolume);
-            }
-        }
+        isLoadingSettings = true;
         
-        if (ConfigurationManager.Graphics != null)
+        try
         {
-            var graphicsConfig = ConfigurationManager.Graphics;
+            LoadAudioSettings();
+            LoadGraphicsSettings();
+            LoadInputSettings();
             
-            if (qualityDropdown != null)
-                qualityDropdown.value = (int)graphicsConfig.qualityLevel;
-            if (fullscreenToggle != null)
-                fullscreenToggle.isOn = graphicsConfig.fullScreenMode == FullScreenMode.FullScreenWindow;
-            if (vSyncToggle != null)
-                vSyncToggle.isOn = graphicsConfig.vSyncEnabled;
+            LogDebug("Current settings loaded");
         }
-        
-        if (ConfigurationManager.Input != null)
+        catch (System.Exception e)
         {
-            var inputConfig = ConfigurationManager.Input;
-            
-            if (mouseSensitivitySlider != null)
-            {
-                mouseSensitivitySlider.value = inputConfig.mouseSensitivity;
-                UpdateSensitivityText(inputConfig.mouseSensitivity);
-            }
-            if (invertMouseYToggle != null)
-                invertMouseYToggle.isOn = inputConfig.invertMouseY;
+            LogError($"Failed to load current settings: {e.Message}");
+        }
+        finally
+        {
+            isLoadingSettings = false;
         }
     }
     
-    // Audio callbacks
+    void LoadAudioSettings()
+    {
+        if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
+        {
+            var volumeSettings = AudioManager.Instance.GetVolumeSettings();
+            
+            SetSliderValue(masterVolumeSlider, volumeSettings.masterVolume, masterVolumeText);
+            SetSliderValue(musicVolumeSlider, volumeSettings.musicVolume, musicVolumeText);
+            SetSliderValue(sfxVolumeSlider, volumeSettings.sfxVolume, sfxVolumeText);
+        }
+    }
+    
+    void LoadGraphicsSettings()
+    {
+        if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+        {
+            var graphicsConfig = ConfigurationManager.Graphics;
+            
+            SetDropdownValue(qualityDropdown, (int)graphicsConfig.qualityLevel);
+            SetToggleValue(fullscreenToggle, graphicsConfig.fullScreenMode == FullScreenMode.FullScreenWindow);
+            SetToggleValue(vSyncToggle, graphicsConfig.vSyncEnabled);
+            
+            // Set resolution dropdown to current resolution
+            SetCurrentResolution();
+        }
+    }
+    
+    void LoadInputSettings()
+    {
+        if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+        {
+            var inputConfig = ConfigurationManager.Input;
+            
+            SetSliderValue(mouseSensitivitySlider, inputConfig.mouseSensitivity, mouseSensitivityText);
+            SetToggleValue(invertMouseYToggle, inputConfig.invertMouseY);
+        }
+    }
+    
+    // Helper methods for setting UI values
+    void SetSliderValue(Slider slider, float value, TextMeshProUGUI text)
+    {
+        if (slider != null)
+        {
+            slider.value = value;
+            UpdateVolumeText(text, value);
+        }
+    }
+    
+    void SetDropdownValue(TMP_Dropdown dropdown, int value)
+    {
+        if (dropdown != null && value >= 0 && value < dropdown.options.Count)
+        {
+            dropdown.value = value;
+        }
+    }
+    
+    void SetToggleValue(Toggle toggle, bool value)
+    {
+        if (toggle != null)
+        {
+            toggle.isOn = value;
+        }
+    }
+
+    #region Audio Callbacks
+    
     void OnMasterVolumeChanged(float value)
     {
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.SetMasterVolume(value);
-        UpdateVolumeText(masterVolumeText, value);
+        if (isLoadingSettings) return;
+        
+        try
+        {
+            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
+            {
+                AudioManager.Instance.SetMasterVolume(value);
+                UpdateVolumeText(masterVolumeText, value);
+                LogDebug($"Master volume changed: {value:F2}");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change master volume: {e.Message}");
+        }
     }
     
     void OnMusicVolumeChanged(float value)
     {
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.SetMusicVolume(value);
-        UpdateVolumeText(musicVolumeText, value);
+        if (isLoadingSettings) return;
+        
+        try
+        {
+            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
+            {
+                AudioManager.Instance.SetMusicVolume(value);
+                UpdateVolumeText(musicVolumeText, value);
+                LogDebug($"Music volume changed: {value:F2}");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change music volume: {e.Message}");
+        }
     }
     
     void OnSFXVolumeChanged(float value)
     {
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.SetSFXVolume(value);
-        UpdateVolumeText(sfxVolumeText, value);
+        if (isLoadingSettings) return;
+        
+        try
+        {
+            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
+            {
+                AudioManager.Instance.SetSFXVolume(value);
+                UpdateVolumeText(sfxVolumeText, value);
+                LogDebug($"SFX volume changed: {value:F2}");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change SFX volume: {e.Message}");
+        }
     }
     
-    // Graphics callbacks
+    #endregion
+
+    #region Graphics Callbacks
+    
     void OnQualityChanged(int qualityIndex)
     {
-        QualitySettings.SetQualityLevel(qualityIndex);
-        if (ConfigurationManager.Graphics != null)
+        if (isLoadingSettings) return;
+        
+        try
         {
-            ConfigurationManager.Graphics.qualityLevel = (QualityLevel)qualityIndex;
+            QualitySettings.SetQualityLevel(qualityIndex);
+            
+            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            {
+                ConfigurationManager.Graphics.qualityLevel = (QualityLevel)qualityIndex;
+            }
+            
+            LogDebug($"Quality level changed: {qualityIndex}");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change quality level: {e.Message}");
         }
     }
     
     void OnResolutionChanged(int resolutionIndex)
     {
-        // Implementar cambio de resolución
-        Resolution[] resolutions = Screen.resolutions;
-        if (resolutionIndex < resolutions.Length)
+        if (isLoadingSettings || availableResolutions == null) return;
+        
+        try
         {
-            Resolution resolution = resolutions[resolutionIndex];
-            Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
+            if (resolutionIndex >= 0 && resolutionIndex < availableResolutions.Length)
+            {
+                Resolution resolution = availableResolutions[resolutionIndex];
+                Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
+                LogDebug($"Resolution changed: {resolution.width}x{resolution.height}");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change resolution: {e.Message}");
         }
     }
     
     void OnFullscreenChanged(bool isFullscreen)
     {
-        Screen.fullScreen = isFullscreen;
-        if (ConfigurationManager.Graphics != null)
+        if (isLoadingSettings) return;
+        
+        try
         {
-            ConfigurationManager.Graphics.fullScreenMode = isFullscreen ? 
-                FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            Screen.fullScreen = isFullscreen;
+            
+            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            {
+                ConfigurationManager.Graphics.fullScreenMode = isFullscreen ? 
+                    FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            }
+            
+            LogDebug($"Fullscreen changed: {isFullscreen}");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change fullscreen mode: {e.Message}");
         }
     }
     
     void OnVSyncChanged(bool enabled)
     {
-        QualitySettings.vSyncCount = enabled ? 1 : 0;
-        if (ConfigurationManager.Graphics != null)
+        if (isLoadingSettings) return;
+        
+        try
         {
-            ConfigurationManager.Graphics.vSyncEnabled = enabled;
+            QualitySettings.vSyncCount = enabled ? 1 : 0;
+            
+            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            {
+                ConfigurationManager.Graphics.vSyncEnabled = enabled;
+            }
+            
+            LogDebug($"VSync changed: {enabled}");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change VSync: {e.Message}");
         }
     }
     
-    // Input callbacks
+    #endregion
+
+    #region Input Callbacks
+    
     void OnMouseSensitivityChanged(float value)
     {
-        if (ConfigurationManager.Input != null)
+        if (isLoadingSettings) return;
+        
+        try
         {
-            ConfigurationManager.Input.mouseSensitivity = value;
+            if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+            {
+                ConfigurationManager.Input.mouseSensitivity = value;
+                UpdateSensitivityText(value);
+                LogDebug($"Mouse sensitivity changed: {value:F1}");
+            }
         }
-        UpdateSensitivityText(value);
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change mouse sensitivity: {e.Message}");
+        }
     }
     
     void OnInvertMouseYChanged(bool inverted)
     {
-        if (ConfigurationManager.Input != null)
+        if (isLoadingSettings) return;
+        
+        try
         {
-            ConfigurationManager.Input.invertMouseY = inverted;
+            if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+            {
+                ConfigurationManager.Input.invertMouseY = inverted;
+                LogDebug($"Invert mouse Y changed: {inverted}");
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to change invert mouse Y: {e.Message}");
         }
     }
     
-    // Utility methods
+    #endregion
+
+    #region Utility Methods
+    
     void UpdateVolumeText(TextMeshProUGUI text, float value)
     {
         if (text != null)
@@ -229,10 +431,11 @@ public class OptionsMenuPanel : UIPanel
         if (qualityDropdown != null)
         {
             qualityDropdown.ClearOptions();
-            qualityDropdown.AddOptions(new System.Collections.Generic.List<string>
+            var options = new List<string>
             {
                 "Very Low", "Low", "Medium", "High", "Very High", "Ultra"
-            });
+            };
+            qualityDropdown.AddOptions(options);
         }
     }
     
@@ -241,21 +444,26 @@ public class OptionsMenuPanel : UIPanel
         if (resolutionDropdown != null)
         {
             resolutionDropdown.ClearOptions();
-            Resolution[] resolutions = Screen.resolutions;
-            var options = new System.Collections.Generic.List<string>();
+            availableResolutions = Screen.resolutions;
+            var options = new List<string>();
             
-            foreach (Resolution res in resolutions)
+            foreach (Resolution res in availableResolutions)
             {
                 options.Add($"{res.width}x{res.height}");
             }
             
             resolutionDropdown.AddOptions(options);
-            
-            // Seleccionar resolución actual
-            for (int i = 0; i < resolutions.Length; i++)
+        }
+    }
+    
+    void SetCurrentResolution()
+    {
+        if (resolutionDropdown != null && availableResolutions != null)
+        {
+            for (int i = 0; i < availableResolutions.Length; i++)
             {
-                if (resolutions[i].width == Screen.currentResolution.width &&
-                    resolutions[i].height == Screen.currentResolution.height)
+                if (availableResolutions[i].width == Screen.currentResolution.width &&
+                    availableResolutions[i].height == Screen.currentResolution.height)
                 {
                     resolutionDropdown.value = i;
                     break;
@@ -266,60 +474,177 @@ public class OptionsMenuPanel : UIPanel
     
     void ResetToDefaults()
     {
-        // Reset audio
-        if (AudioManager.Instance != null)
+        try
         {
-            AudioManager.Instance.SetMasterVolume(1f);
-            AudioManager.Instance.SetMusicVolume(0.7f);
-            AudioManager.Instance.SetSFXVolume(0.8f);
+            LogDebug("Resetting to default settings");
+            
+            // Reset audio
+            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
+            {
+                AudioManager.Instance.SetMasterVolume(1f);
+                AudioManager.Instance.SetMusicVolume(0.7f);
+                AudioManager.Instance.SetSFXVolume(0.8f);
+            }
+            
+            // Reset graphics
+            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            {
+                var config = ConfigurationManager.Graphics;
+                config.qualityLevel = QualityLevel.High;
+                config.vSyncEnabled = true;
+                config.fullScreenMode = FullScreenMode.FullScreenWindow;
+            }
+            
+            // Reset input
+            if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+            {
+                var config = ConfigurationManager.Input;
+                config.mouseSensitivity = 2f;
+                config.invertMouseY = false;
+            }
+            
+            // Reload UI
+            LoadCurrentSettings();
+            
+            LogDebug("Settings reset to defaults");
         }
-        
-        // Reset graphics
-        if (ConfigurationManager.Graphics != null)
+        catch (System.Exception e)
         {
-            ConfigurationManager.Graphics.qualityLevel = QualityLevel.High;
-            ConfigurationManager.Graphics.vSyncEnabled = true;
-            ConfigurationManager.Graphics.fullScreenMode = FullScreenMode.FullScreenWindow;
+            LogError($"Failed to reset to defaults: {e.Message}");
         }
-        
-        // Reset input
-        if (ConfigurationManager.Input != null)
-        {
-            ConfigurationManager.Input.mouseSensitivity = 2f;
-            ConfigurationManager.Input.invertMouseY = false;
-        }
-        
-        // Reload UI
-        LoadCurrentSettings();
     }
+    
+    void ApplySettings()
+    {
+        try
+        {
+            LogDebug("Applying settings");
+            
+            // Apply graphics settings
+            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            {
+                ConfigurationManager.Graphics.ApplySettings();
+            }
+            
+            LogDebug("Settings applied successfully");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to apply settings: {e.Message}");
+        }
+    }
+    
+    #endregion
+
+    #region Category Management
     
     public void ShowCategorySelector()
     {
-        categorySelectorPanel.SetActive(true);
-        audioPanel.SetActive(false);
-        graphicsPanel.SetActive(false);
-        gameplayPanel.SetActive(false);
-        controlsPanel.SetActive(false);
+        try
+        {
+            SetCategoryPanelActive("selector");
+            LogDebug("Category selector shown");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to show category selector: {e.Message}");
+        }
     }
     
     public void OnCategorySelected(string category)
     {
-        categorySelectorPanel.SetActive(false);
-        audioPanel.SetActive(category == "Audio");
-        graphicsPanel.SetActive(category == "Graphics");
-        gameplayPanel.SetActive(category == "Gameplay");
-        controlsPanel.SetActive(category == "Controls");
+        try
+        {
+            SetCategoryPanelActive(category);
+            LogDebug($"Category selected: {category}");
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to select category: {e.Message}");
+        }
     }
+    
+    void SetCategoryPanelActive(string activeCategory)
+    {
+        if (categorySelectorPanel != null)
+            categorySelectorPanel.SetActive(activeCategory == "selector");
+        if (audioPanel != null)
+            audioPanel.SetActive(activeCategory == "audio");
+        if (graphicsPanel != null)
+            graphicsPanel.SetActive(activeCategory == "graphics");
+        if (gameplayPanel != null)
+            gameplayPanel.SetActive(activeCategory == "gameplay");
+        if (controlsPanel != null)
+            controlsPanel.SetActive(activeCategory == "controls");
+    }
+    
+    #endregion
     
     void GoBack()
     {
-        UIManager.Instance.GoBack();
+        try
+        {
+            LogDebug("Going back");
+            if (UIValidation.ValidateManager(UIManager.Instance, "UIManager"))
+            {
+                UIManager.Instance.GoBack();
+            }
+        }
+        catch (System.Exception e)
+        {
+            LogError($"Failed to go back: {e.Message}");
+        }
     }
     
     protected override void OnShow()
     {
+        // Seleccionar primer botón para navegación con gamepad
         if (backButton != null)
+        {
             backButton.Select();
+            LogDebug("Back button selected for navigation");
+        }
+        
+        // Show category selector by default
+        ShowCategorySelector();
     }
     
+    void OnDestroy()
+    {
+        // Cleanup listeners
+        CleanupSliders();
+        CleanupDropdowns();
+        CleanupToggles();
+        CleanupButtons();
+        
+        LogDebug("Options Menu Panel destroyed");
+    }
+    
+    void CleanupSliders()
+    {
+        if (masterVolumeSlider != null) masterVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (musicVolumeSlider != null) musicVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (sfxVolumeSlider != null) sfxVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (mouseSensitivitySlider != null) mouseSensitivitySlider.onValueChanged.RemoveAllListeners();
+    }
+    
+    void CleanupDropdowns()
+    {
+        if (qualityDropdown != null) qualityDropdown.onValueChanged.RemoveAllListeners();
+        if (resolutionDropdown != null) resolutionDropdown.onValueChanged.RemoveAllListeners();
+    }
+    
+    void CleanupToggles()
+    {
+        if (fullscreenToggle != null) fullscreenToggle.onValueChanged.RemoveAllListeners();
+        if (vSyncToggle != null) vSyncToggle.onValueChanged.RemoveAllListeners();
+        if (invertMouseYToggle != null) invertMouseYToggle.onValueChanged.RemoveAllListeners();
+    }
+    
+    void CleanupButtons()
+    {
+        if (backButton != null) backButton.onClick.RemoveAllListeners();
+        if (resetToDefaultsButton != null) resetToDefaultsButton.onClick.RemoveAllListeners();
+        if (applyButton != null) applyButton.onClick.RemoveAllListeners();
+    }
 }

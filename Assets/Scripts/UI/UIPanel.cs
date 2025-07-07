@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 [RequireComponent(typeof(CanvasGroup))]
@@ -8,6 +9,7 @@ public abstract class UIPanel : MonoBehaviour
     [SerializeField] protected bool startVisible = false;
     [SerializeField] protected bool useScaleAnimation = true;
     [SerializeField] protected bool blockGameInput = true;
+    [SerializeField] protected bool enableDebugLogs = true;
     
     [Header("🎯 Navigation")]
     [SerializeField] protected string nextPanelID;
@@ -19,8 +21,10 @@ public abstract class UIPanel : MonoBehaviour
     
     // Estado
     private bool isVisible;
+    private bool isInitialized;
     public bool IsVisible => isVisible;
     public bool UseScaleAnimation => useScaleAnimation;
+    public bool IsInitialized => isInitialized;
     
     // Eventos
     public System.Action OnPanelOpened;
@@ -30,25 +34,47 @@ public abstract class UIPanel : MonoBehaviour
     
     public virtual void Initialize()
     {
-        canvasGroup = GetComponent<CanvasGroup>();
-        
-        if (canvasGroup == null)
+        try
         {
-            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            LogDebug("Initializing...");
+            
+            // Validar Panel ID
+            if (string.IsNullOrEmpty(panelID))
+            {
+                Debug.LogWarning($"⚠️ [UIPanel] Panel ID is empty on {gameObject.name}, using GameObject name as fallback");
+                panelID = gameObject.name;
+            }
+            
+            // Obtener o crear CanvasGroup
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                LogDebug("Creating CanvasGroup component");
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+            
+            // Estado inicial
+            SetVisible(startVisible);
+            gameObject.SetActive(startVisible);
+            
+            // Configuración inicial
+            if (!startVisible)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.blocksRaycasts = false;
+            }
+            
+            // Llamar inicialización específica
+            OnInitialize();
+            
+            isInitialized = true;
+            LogDebug($"Successfully initialized (ID: {panelID})");
         }
-        
-        // Estado inicial
-        SetVisible(startVisible);
-        gameObject.SetActive(startVisible);
-        
-        // Configuración inicial
-        if (!startVisible)
+        catch (System.Exception e)
         {
-            canvasGroup.alpha = 0f;
-            canvasGroup.blocksRaycasts = false;
+            Debug.LogError($"❌ [UIPanel] Initialization failed for {gameObject.name}: {e.Message}");
+            isInitialized = false;
         }
-        
-        OnInitialize();
     }
     
     protected virtual void OnInitialize() { }
@@ -59,7 +85,20 @@ public abstract class UIPanel : MonoBehaviour
     
     public virtual void SetVisible(bool visible)
     {
+        if (!isInitialized)
+        {
+            Debug.LogWarning($"⚠️ [UIPanel] {panelID} not initialized, cannot set visibility");
+            return;
+        }
+        
+        if (isVisible == visible)
+        {
+            LogDebug($"Visibility already set to {visible}");
+            return;
+        }
+        
         isVisible = visible;
+        LogDebug($"Visibility changed to: {visible}");
         
         if (visible)
         {
@@ -73,11 +112,25 @@ public abstract class UIPanel : MonoBehaviour
         }
     }
     
-    protected virtual void OnShow() { }
-    protected virtual void OnHide() { }
+    protected virtual void OnShow() 
+    {
+        LogDebug("OnShow called");
+    }
     
-    public virtual void OnShowComplete() { }
-    public virtual void OnHideComplete() { }
+    protected virtual void OnHide() 
+    {
+        LogDebug("OnHide called");
+    }
+    
+    public virtual void OnShowComplete() 
+    {
+        LogDebug("Show animation completed");
+    }
+    
+    public virtual void OnHideComplete() 
+    {
+        LogDebug("Hide animation completed");
+    }
     
     #endregion
 
@@ -87,7 +140,15 @@ public abstract class UIPanel : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(nextPanelID))
         {
-            UIManager.Instance.ShowPanel(nextPanelID);
+            LogDebug($"Navigating to next panel: {nextPanelID}");
+            if (UIValidation.ValidateManager(UIManager.Instance, "UIManager"))
+            {
+                UIManager.Instance.ShowPanel(nextPanelID);
+            }
+        }
+        else
+        {
+            LogDebug("No next panel ID specified");
         }
     }
     
@@ -95,17 +156,49 @@ public abstract class UIPanel : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(previousPanelID))
         {
-            UIManager.Instance.ShowPanel(previousPanelID);
+            LogDebug($"Navigating to previous panel: {previousPanelID}");
+            if (UIValidation.ValidateManager(UIManager.Instance, "UIManager"))
+            {
+                UIManager.Instance.ShowPanel(previousPanelID);
+            }
         }
         else
         {
-            UIManager.Instance.GoBack();
+            LogDebug("No previous panel ID specified, using GoBack");
+            if (UIValidation.ValidateManager(UIManager.Instance, "UIManager"))
+            {
+                UIManager.Instance.GoBack();
+            }
         }
     }
     
     public virtual void ClosePanel()
     {
-        UIManager.Instance.HidePanel(panelID);
+        LogDebug("Closing panel");
+        if (UIValidation.ValidateManager(UIManager.Instance, "UIManager"))
+        {
+            UIManager.Instance.HidePanel(panelID);
+        }
+    }
+    
+    #endregion
+    
+    #region Utility
+    
+    protected void LogDebug(string message)
+    {
+        if (enableDebugLogs)
+            Debug.Log($"🎨 [UIPanel:{panelID}] {message}");
+    }
+    
+    protected void LogWarning(string message)
+    {
+        Debug.LogWarning($"⚠️ [UIPanel:{panelID}] {message}");
+    }
+    
+    protected void LogError(string message)
+    {
+        Debug.LogError($"❌ [UIPanel:{panelID}] {message}");
     }
     
     #endregion
