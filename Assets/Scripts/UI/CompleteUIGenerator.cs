@@ -158,11 +158,12 @@ public class CompleteUIGenerator : MonoBehaviour
     void CreateUIManager()
     {
         LogDebug("🎮 Creating UI Manager...");
-        
+
         GameObject uiManagerGO = new GameObject("UI Manager");
+        uiManagerGO.SetActive(false); // Delay Awake until panels are configured
         uiManager = uiManagerGO.AddComponent<UIManager>();
-        
-        LogDebug("✅ UI Manager created");
+
+        LogDebug("✅ UI Manager created (inactive)");
     }
     
     void GenerateAllPanels()
@@ -210,9 +211,9 @@ public class CompleteUIGenerator : MonoBehaviour
         // Agregar componente UIPanel concreto
         ConcreteUIPanel uiPanel = panelGO.AddComponent<ConcreteUIPanel>();
         uiPanel.panelID = panelID;
-        uiPanel.startVisible = startVisible;
-        uiPanel.useScaleAnimation = panelID != "HUD";
-        uiPanel.blockGameInput = panelID != "HUD";
+        uiPanel.startVisibleSetting = startVisible;
+        uiPanel.useScaleAnimationSetting = panelID != "HUD";
+        uiPanel.blockGameInputSetting = panelID != "HUD";
         
         panelGO.SetActive(startVisible);
         
@@ -694,7 +695,7 @@ public class CompleteUIGenerator : MonoBehaviour
     void ConfigureUIManager()
     {
         LogDebug("📋 Configuring UIManager...");
-        
+
         if (uiManager != null)
         {
             // Crear array de UIPanel para UIManager
@@ -716,6 +717,12 @@ public class CompleteUIGenerator : MonoBehaviour
             else
             {
                 LogDebug("⚠️ Could not find uiPanels field in UIManager");
+            }
+
+            // Activate UIManager now that panels are configured
+            if (!uiManager.gameObject.activeSelf)
+            {
+                uiManager.gameObject.SetActive(true);
             }
         }
     }
@@ -819,11 +826,11 @@ public class CompleteUIGenerator : MonoBehaviour
 public class ConcreteUIPanel : UIPanel
 {
     [Header("🎯 Panel Configuration")]
-    public bool startVisible = false;
-    public bool useScaleAnimation = true;
-    public bool blockGameInput = true;
-    public string nextPanelID = "";
-    public string previousPanelID = "";
+    public bool startVisibleSetting = false;
+    public bool useScaleAnimationSetting = true;
+    public bool blockGameInputSetting = true;
+    public string nextPanelIDSetting = "";
+    public string previousPanelIDSetting = "";
     
     protected override void OnInitialize()
     {
@@ -839,11 +846,11 @@ public class ConcreteUIPanel : UIPanel
         var prevField = typeof(UIPanel).GetField("previousPanelID", 
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         
-        startVisibleField?.SetValue(this, startVisible);
-        useScaleField?.SetValue(this, useScaleAnimation);
-        blockInputField?.SetValue(this, blockGameInput);
-        nextField?.SetValue(this, nextPanelID);
-        prevField?.SetValue(this, previousPanelID);
+        startVisibleField?.SetValue(this, startVisibleSetting);
+        useScaleField?.SetValue(this, useScaleAnimationSetting);
+        blockInputField?.SetValue(this, blockGameInputSetting);
+        nextField?.SetValue(this, nextPanelIDSetting);
+        prevField?.SetValue(this, previousPanelIDSetting);
         
         Debug.Log($"🎨 [ConcreteUIPanel] Initialized panel: {panelID}");
     }
