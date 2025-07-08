@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +31,9 @@ public class CompleteUIGenerator : MonoBehaviour
     [Header("🎮 Game Settings")]
     [SerializeField] private int maxSaveSlots = 3;
     [SerializeField] private bool supportControllerInput = true;
+
+    [Header("🏞️ Scene Settings")]
+    [SerializeField] private string gameplaySceneName = "Lobby";
     
     [Header("📊 Generation Results")]
     [SerializeField] private int panelsCreated = 0;
@@ -74,6 +78,25 @@ public class CompleteUIGenerator : MonoBehaviour
     private string language = "Español";
     private float mouseSensitivity = 0.5f;
     private bool invertY = false;
+
+    void LoadConfigurationValues()
+    {
+        if (ConfigurationManager.Instance == null) return;
+
+        if (ConfigurationManager.Audio != null)
+        {
+            masterVolume = ConfigurationManager.Audio.masterVolume;
+            musicVolume = ConfigurationManager.Audio.musicVolume;
+            sfxVolume = ConfigurationManager.Audio.sfxVolume;
+            voiceVolume = ConfigurationManager.Audio.voiceVolume;
+        }
+
+        if (ConfigurationManager.Input != null)
+        {
+            mouseSensitivity = ConfigurationManager.Input.mouseSensitivity;
+            invertY = ConfigurationManager.Input.invertMouseY;
+        }
+    }
     
     void Start()
     {
@@ -89,6 +112,8 @@ public class CompleteUIGenerator : MonoBehaviour
         uiManager = uiManager ?? FindObjectOfType<UIManager>();
         Debug.Log($"✅ UIManager asignado: {(uiManager != null ? "Sí" : "NO")}");
         LogDebug("🚀 Starting Complete UI Generation...");
+
+        LoadConfigurationValues();
         
         try
         {
@@ -999,10 +1024,10 @@ public class CompleteUIGenerator : MonoBehaviour
         descText.alignment = TextAlignmentOptions.Center;
         
         // Botones de acción
-        CreateButton(panel.transform, "COMENZAR", new Vector2(-100, -250), new Vector2(180, 50), 
+        CreateButton(panel.transform, "COMENZAR", new Vector2(-100, -250), new Vector2(180, 50),
             () => {
                 LogDebug("Iniciando nueva partida...");
-                uiManager?.ShowPanel("HUD");
+                SceneManager.LoadScene(gameplaySceneName);
             });
             
         CreateButton(panel.transform, "VOLVER", new Vector2(100, -250), new Vector2(180, 50), 
@@ -1057,10 +1082,10 @@ public class CompleteUIGenerator : MonoBehaviour
                 
                 // Botones
                 int slotIndex = i;
-                CreateButton(saveContainer.transform, "CARGAR", new Vector2(200, 0), new Vector2(100, 40), 
+                CreateButton(saveContainer.transform, "CARGAR", new Vector2(200, 0), new Vector2(100, 40),
                     () => {
                         LogDebug($"Cargando partida {slotIndex}...");
-                        uiManager?.ShowPanel("HUD");
+                        SceneManager.LoadScene(gameplaySceneName);
                     });
                     
                 CreateButton(saveContainer.transform, "BORRAR", new Vector2(320, 0), new Vector2(80, 30), 
@@ -1356,6 +1381,8 @@ void GenerateVideoOptionsPanel()
         CreateSlider(panel.transform, "Volumen General:", new Vector2(0, 200), new Vector2(300, 20), 0, 1, masterVolume,
             (float value) => {
                 masterVolume = value;
+                if (ConfigurationManager.Instance != null)
+                    ConfigurationManager.Audio.masterVolume = value;
                 LogDebug($"Volumen maestro: {value}");
             });
         
@@ -1363,6 +1390,8 @@ void GenerateVideoOptionsPanel()
         CreateSlider(panel.transform, "Música:", new Vector2(0, 140), new Vector2(300, 20), 0, 1, musicVolume,
             (float value) => {
                 musicVolume = value;
+                if (ConfigurationManager.Instance != null)
+                    ConfigurationManager.Audio.musicVolume = value;
                 LogDebug($"Volumen música: {value}");
             });
         
@@ -1370,6 +1399,8 @@ void GenerateVideoOptionsPanel()
         CreateSlider(panel.transform, "Efectos:", new Vector2(0, 80), new Vector2(300, 20), 0, 1, sfxVolume,
             (float value) => {
                 sfxVolume = value;
+                if (ConfigurationManager.Instance != null)
+                    ConfigurationManager.Audio.sfxVolume = value;
                 LogDebug($"Volumen SFX: {value}");
             });
         
@@ -1377,6 +1408,8 @@ void GenerateVideoOptionsPanel()
         CreateSlider(panel.transform, "Voces:", new Vector2(0, 20), new Vector2(300, 20), 0, 1, voiceVolume,
             (float value) => {
                 voiceVolume = value;
+                if (ConfigurationManager.Instance != null)
+                    ConfigurationManager.Audio.voiceVolume = value;
                 LogDebug($"Volumen voces: {value}");
             });
         
@@ -1414,6 +1447,8 @@ void GenerateVideoOptionsPanel()
         CreateSlider(panel.transform, "Sensibilidad Ratón:", new Vector2(0, 200), new Vector2(300, 20), 0.1f, 2f, mouseSensitivity,
             (float value) => {
                 mouseSensitivity = value;
+                if (ConfigurationManager.Instance != null)
+                    ConfigurationManager.Input.mouseSensitivity = value;
                 LogDebug($"Sensibilidad ratón: {value}");
             });
         
@@ -1421,6 +1456,8 @@ void GenerateVideoOptionsPanel()
         CreateToggle(panel.transform, "Invertir Eje Y", new Vector2(0, 140), invertY,
             (bool value) => {
                 invertY = value;
+                if (ConfigurationManager.Instance != null)
+                    ConfigurationManager.Input.invertMouseY = value;
                 LogDebug($"Invertir Y: {value}");
             });
         
