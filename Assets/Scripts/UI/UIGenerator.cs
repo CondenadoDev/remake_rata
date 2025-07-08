@@ -70,7 +70,7 @@
             panelGO.name = config.panelId;
             
             // Setup panel component
-            BaseUIPanel panelComponent = AddPanelComponent(panelGO, config.panelType);
+            BaseUIPanel panelComponent = AddPanelComponent(panelGO, config.panelType, config.panelId);
             if (panelComponent != null)
             {
                 panelComponent.panelId = config.panelId;
@@ -101,14 +101,28 @@
             generatedPanels[config.panelId] = panelGO;
         }
 
-        private BaseUIPanel AddPanelComponent(GameObject panelGO, PanelType type)
+        private BaseUIPanel AddPanelComponent(GameObject panelGO, PanelType type, string panelId)
         {
             switch (type)
             {
                 case PanelType.Menu:
                     return panelGO.AddComponent<MenuPanel>();
                 case PanelType.Settings:
-                    return panelGO.AddComponent<GraphicsSettingsPanel>();
+                    switch (panelId)
+                    {
+                        case "AudioOptions":
+                            return panelGO.AddComponent<AudioSettingsPanel>();
+                        case "GraphicsOptions":
+                            return panelGO.AddComponent<GraphicsSettingsPanel>();
+                        case "ControlsOptions":
+                            return panelGO.AddComponent<InputSettingsPanel>();
+                        case "GameplayOptions":
+                            return panelGO.AddComponent<GameplaySettingsPanel>();
+                        case "PlayerOptions":
+                            return panelGO.AddComponent<PlayerSettingsPanel>();
+                        default:
+                            return panelGO.AddComponent<GraphicsSettingsPanel>();
+                    }
                 case PanelType.HUD:
                     return panelGO.AddComponent<HUDPanel>();
                 default:
