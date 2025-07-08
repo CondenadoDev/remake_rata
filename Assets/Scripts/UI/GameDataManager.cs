@@ -53,10 +53,10 @@
         public void LoadPlayerData()
         {
             currentPlayerData = ConfigurationManager.Instance.GetConfiguration<PlayerData>(SAVE_KEY);
-            
+
             if (currentPlayerData == null)
             {
-                currentPlayerData = new PlayerData();
+                currentPlayerData = ScriptableObject.CreateInstance<PlayerData>();
             }
             
             OnPlayerDataChanged?.Invoke(currentPlayerData);

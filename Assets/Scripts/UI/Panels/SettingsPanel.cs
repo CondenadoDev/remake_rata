@@ -44,7 +44,8 @@ public abstract class SettingsPanel<T> : BaseUIPanel, IConfigurable<T>, IPersist
             if (config == null) return;
             
             currentConfiguration = config;
-            settingsData = new SettingsData<T> { configuration = config };
+            settingsData = ScriptableObject.CreateInstance<SettingsData<T>>();
+            settingsData.configuration = config;
             
             // Bind UI to settings data
             BindToData(settingsData);
@@ -87,7 +88,8 @@ public abstract class SettingsPanel<T> : BaseUIPanel, IConfigurable<T>, IPersist
             else if (defaultConfiguration != null)
             {
                 currentConfiguration = Instantiate(defaultConfiguration);
-                settingsData = new SettingsData<T> { configuration = currentConfiguration };
+                settingsData = ScriptableObject.CreateInstance<SettingsData<T>>();
+                settingsData.configuration = currentConfiguration;
             }
         }
 
@@ -117,7 +119,7 @@ public abstract class SettingsPanel<T> : BaseUIPanel, IConfigurable<T>, IPersist
     }
 
     [Serializable]
-    public class SettingsData<T> where T : ScriptableObject
+    public class SettingsData<T> : ScriptableObject where T : ScriptableObject
     {
         public T configuration;
         public long lastModified;

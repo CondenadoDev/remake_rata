@@ -1,5 +1,11 @@
 // BindableObject.cs - Base class for bindable data
-public abstract class BindableObject : INotifyPropertyChanged
+using UnityEngine;
+
+/// <summary>
+/// Simple ScriptableObject implementing INotifyPropertyChanged so that data
+/// objects can be used with the existing binding system.
+/// </summary>
+public abstract class BindableObject : ScriptableObject, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler PropertyChanged;
 
