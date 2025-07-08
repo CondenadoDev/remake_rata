@@ -94,7 +94,8 @@ public class AudioManager : MonoBehaviour
         
         // Cargar configuración guardada
         LoadVolumeSettings();
-        
+        ApplyConfigurationValues();
+
         Debug.Log($"🔊 AudioManager initialized with {sfxPoolSize} SFX sources");
     }
     
@@ -443,6 +444,23 @@ public class AudioManager : MonoBehaviour
     public VolumeSettings GetVolumeSettings()
     {
         return volumeSettings;
+    }
+
+    /// <summary>
+    /// Apply configuration values from the global AudioConfig to this manager.
+    /// </summary>
+    public void ApplyConfigurationValues()
+    {
+        if (ConfigurationManager.Instance == null || ConfigurationManager.Audio == null)
+            return;
+
+        var config = ConfigurationManager.Audio;
+
+        SetMasterVolume(config.masterVolume);
+        SetMusicVolume(config.musicVolume);
+        SetSFXVolume(config.sfxVolume);
+        SetUIVolume(config.uiVolume);
+        SetAmbienceVolume(config.ambienceVolume);
     }
     
     #endregion

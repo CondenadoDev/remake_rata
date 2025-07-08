@@ -493,6 +493,7 @@ public class OptionsMenuPanel : UIPanel
                 config.qualityLevel = QualityLevel.High;
                 config.vSyncEnabled = true;
                 config.fullScreenMode = FullScreenMode.FullScreenWindow;
+                config.ValidateValues();
             }
             
             // Reset input
@@ -501,11 +502,22 @@ public class OptionsMenuPanel : UIPanel
                 var config = ConfigurationManager.Input;
                 config.mouseSensitivity = 2f;
                 config.invertMouseY = false;
+                config.ValidateValues();
             }
             
-            // Reload UI
+            // Apply changes
+            if (UIValidation.ValidateManager(InputManager.Instance, "InputManager"))
+            {
+                InputManager.Instance.ApplyConfigurationValues();
+            }
+
+            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
+            {
+                AudioManager.Instance.ApplyConfigurationValues();
+            }
+
             LoadCurrentSettings();
-            
+
             LogDebug("Settings reset to defaults");
         }
         catch (System.Exception e)
@@ -519,13 +531,26 @@ public class OptionsMenuPanel : UIPanel
         try
         {
             LogDebug("Applying settings");
-            
-            // Apply graphics settings
+
+            // Graphics
             if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
             {
+                ConfigurationManager.Graphics.ValidateValues();
                 ConfigurationManager.Graphics.ApplySettings();
             }
-            
+
+            // Audio
+            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
+            {
+                AudioManager.Instance.ApplyConfigurationValues();
+            }
+
+            // Input
+            if (UIValidation.ValidateManager(InputManager.Instance, "InputManager"))
+            {
+                InputManager.Instance.ApplyConfigurationValues();
+            }
+
             LogDebug("Settings applied successfully");
         }
         catch (System.Exception e)
