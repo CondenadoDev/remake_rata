@@ -47,6 +47,7 @@ namespace UISystem.Core
 
         [SerializeField] private bool allowMultiplePanels = false;
         [SerializeField] private float panelTransitionTime = 0.3f;
+        [SerializeField] private AudioClip clickSound;
 
         private Dictionary<string, BaseUIPanel> panels = new Dictionary<string, BaseUIPanel>();
         private Stack<BaseUIPanel> navigationStack = new Stack<BaseUIPanel>();
@@ -231,6 +232,17 @@ namespace UISystem.Core
                 return panel as T;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Plays a simple UI click sound through the AudioManager if available.
+        /// </summary>
+        public void PlayClickSound()
+        {
+            if (AudioManager.Instance != null && clickSound != null)
+            {
+                AudioManager.Instance.PlayUISFX(clickSound);
+            }
         }
 
         private void OnPanelShownHandler(BaseUIPanel panel)
