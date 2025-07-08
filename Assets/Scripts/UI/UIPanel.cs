@@ -7,7 +7,7 @@ public abstract class UIPanel : MonoBehaviour
     [Header("🎨 Panel Settings")]
     public string panelID;
     [SerializeField] public bool startVisible = false;
-    [SerializeField] public bool useScaleAnimation = true;
+    [SerializeField] public bool useScaleAnimation = false;
     [SerializeField] public bool blockGameInput = true;
     [SerializeField] protected bool enableDebugLogs = true;
     

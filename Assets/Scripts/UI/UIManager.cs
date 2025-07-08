@@ -154,73 +154,104 @@ public class UIManager : MonoBehaviour
 
     #region Panel Management
     
-    public void ShowPanel(string panelID, bool addToHistory = true)
+public void ShowPanel(string panelID, bool addToHistory = true)
+{
+    if (!isInitialized)
     {
-        if (!isInitialized)
-        {
-            Debug.LogError("❌ [UIManager] Not initialized yet, cannot show panel");
-            return;
-        }
-        
-        if (!panelDictionary.TryGetValue(panelID, out UIPanel panel))
-        {
-            Debug.LogError($"❌ [UIManager] Panel '{panelID}' not found!");
-            return;
-        }
-        
-        LogDebug($"Showing panel: {panelID}");
-        
-        // Guardar panel anterior en historial (evitar duplicados)
-        if (addToHistory && currentActivePanel != null && currentActivePanel != panel)
-        {
-            panelHistory.Push(currentActivePanel);
-            LogDebug($"Added to history: {currentActivePanel.panelID}");
-        }
-        
-        // Ocultar panel actual
-        if (currentActivePanel != null && currentActivePanel != panel)
-        {
-            HidePanel(currentActivePanel.panelID, false);
-        }
-        
-        // Mostrar nuevo panel
-        StartCoroutine(ShowPanelCoroutine(panel));
-        
-        var previousPanel = currentActivePanel;
-        currentActivePanel = panel;
-        OnPanelSwitched?.Invoke(previousPanel, panel);
-        
-        // Audio feedback
-        PlaySound(openSound);
+        Debug.LogError("❌ [UIManager] Not initialized yet, cannot show panel");
+        return;
     }
-    
-    public void HidePanel(string panelID, bool returnToPrevious = true)
+
+    if (!panelDictionary.TryGetValue(panelID, out UIPanel panel))
     {
-        if (!panelDictionary.TryGetValue(panelID, out UIPanel panel))
-        {
-            Debug.LogError($"❌ [UIManager] Panel '{panelID}' not found!");
-            return;
-        }
-        
-        LogDebug($"Hiding panel: {panelID}");
-        
-        StartCoroutine(HidePanelCoroutine(panel));
-        
-        // Volver al panel anterior si existe
-        if (returnToPrevious && panelHistory.Count > 0)
-        {
-            var previousPanel = panelHistory.Pop();
-            LogDebug($"Returning to previous panel: {previousPanel.panelID}");
-            ShowPanel(previousPanel.panelID, false);
-        }
-        else if (panel == currentActivePanel)
-        {
-            currentActivePanel = null;
-        }
-        
-        // Audio feedback
-        PlaySound(closeSound);
+        Debug.LogError($"❌ [UIManager] Panel '{panelID}' not found!");
+        return;
     }
+
+    LogDebug($"Showing panel: {panelID}");
+
+    // Guardar panel anterior en historial (evitar duplicados)
+    if (addToHistory && currentActivePanel != null && currentActivePanel != panel)
+    {
+        panelHistory.Push(currentActivePanel);
+        LogDebug($"Added to history: {currentActivePanel.panelID}");
+    }
+
+    // Ocultar panel actual
+    if (currentActivePanel != null && currentActivePanel != panel)
+    {
+        HidePanel(currentActivePanel.panelID, false);
+    }
+
+    // Mostrar nuevo panel (sin animación)
+    panel.gameObject.SetActive(true);
+    panel.SetVisible(true);
+    if (panel.CanvasGroup != null)
+    {
+        panel.CanvasGroup.alpha = 1f;
+        panel.CanvasGroup.blocksRaycasts = true;
+    }
+    if (panel.UseScaleAnimation)
+    {
+        panel.transform.localScale = Vector3.one;
+    }
+
+    try
+    {
+        panel.OnShowComplete();
+    }
+    catch { }
+
+    var previousPanel = currentActivePanel;
+    currentActivePanel = panel;
+    OnPanelSwitched?.Invoke(previousPanel, panel);
+
+    PlaySound(openSound);
+}
+
+public void HidePanel(string panelID, bool returnToPrevious = true)
+{
+    if (!panelDictionary.TryGetValue(panelID, out UIPanel panel))
+    {
+        Debug.LogError($"❌ [UIManager] Panel '{panelID}' not found!");
+        return;
+    }
+
+    LogDebug($"Hiding panel: {panelID}");
+
+    // Ocultar panel altiro (sin animación)
+    panel.SetVisible(false);
+    if (panel.CanvasGroup != null)
+    {
+        panel.CanvasGroup.alpha = 0f;
+        panel.CanvasGroup.blocksRaycasts = false;
+    }
+    if (panel.UseScaleAnimation)
+    {
+        panel.transform.localScale = Vector3.one;
+    }
+    panel.gameObject.SetActive(false);
+
+    try
+    {
+        panel.OnHideComplete();
+    }
+    catch { }
+
+    // Volver al panel anterior si existe
+    if (returnToPrevious && panelHistory.Count > 0)
+    {
+        var previousPanel = panelHistory.Pop();
+        LogDebug($"Returning to previous panel: {previousPanel.panelID}");
+        ShowPanel(previousPanel.panelID, false);
+    }
+    else if (panel == currentActivePanel)
+    {
+        currentActivePanel = null;
+    }
+
+    PlaySound(closeSound);
+}
     
     public void TogglePanel(string panelID)
     {

@@ -32,8 +32,8 @@ public class AudioConfig : ConfigurationBase
     public float dopplerLevel = 0.5f;
     public float listenerVolume = 1f;
     public AnimationCurve spatialFalloffCurve = AnimationCurve.Linear(0, 1, 1, 0);
-    
-    protected override void ValidateValues()
+
+    public override void ValidateValues()
     {
         musicCrossfadeDuration = Mathf.Max(0.1f, musicCrossfadeDuration);
         maxConcurrentSFX = Mathf.Clamp(maxConcurrentSFX, 1, 128);

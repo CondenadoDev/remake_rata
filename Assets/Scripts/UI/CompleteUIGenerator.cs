@@ -310,6 +310,8 @@ public class CompleteUIGenerator : MonoBehaviour
         
         panelGO.SetActive(false);
         
+        uiManager?.RegisterPanel(panel);
+        
         return panelGO;
     }
     
@@ -1101,77 +1103,248 @@ public class CompleteUIGenerator : MonoBehaviour
             () => uiManager?.ShowPanel("MainMenu"));
     }
     
-    void GenerateVideoOptionsPanel()
-    {
-        GameObject panel = CreateBasePanel("Video Options Panel", "VideoOptions");
-        
-        CreateTitle(panel.transform, "OPCIONES DE VIDEO", new Vector2(0, 300));
-        
-        // Resolución
-        string[] resolutions = { "1920x1080", "1600x900", "1280x720", "1024x768" };
-        CreateDropdown(panel.transform, "Resolución:", new Vector2(0, 200), resolutions, resolutionIndex,
-            (int index) => {
-                resolutionIndex = index;
-                LogDebug($"Resolución cambiada a: {resolutions[index]}");
-            });
-        
-        // Calidad gráfica
-        string[] qualities = { "Bajo", "Medio", "Alto", "Ultra" };
-        CreateDropdown(panel.transform, "Calidad:", new Vector2(0, 150), qualities, graphicsQuality,
-            (int index) => {
-                graphicsQuality = index;
-                LogDebug($"Calidad gráfica: {qualities[index]}");
-            });
-        
-        // Pantalla completa
-        CreateToggle(panel.transform, "Pantalla Completa", new Vector2(0, 80), fullscreen,
-            (bool value) => {
-                fullscreen = value;
-                LogDebug($"Pantalla completa: {value}");
-            });
-        
-        // VSync
-        CreateToggle(panel.transform, "VSync", new Vector2(0, 40), vsync,
-            (bool value) => {
-                vsync = value;
-                LogDebug($"VSync: {value}");
-            });
-        
-        // Sombras
-        CreateToggle(panel.transform, "Sombras", new Vector2(0, 0), shadows,
-            (bool value) => {
-                shadows = value;
-                LogDebug($"Sombras: {value}");
-            });
-        
-        // Anti-aliasing
-        CreateToggle(panel.transform, "Anti-aliasing", new Vector2(0, -40), antialiasing,
-            (bool value) => {
-                antialiasing = value;
-                LogDebug($"Anti-aliasing: {value}");
-            });
-        
-        // Brillo
-        CreateSlider(panel.transform, "Brillo:", new Vector2(0, -100), new Vector2(200, 20), 0, 1, brightness,
-            (float value) => {
-                brightness = value;
-                LogDebug($"Brillo: {value}");
-            });
-        
-        // Gamma
-        CreateSlider(panel.transform, "Gamma:", new Vector2(0, -150), new Vector2(200, 20), 0.5f, 2f, gamma,
-            (float value) => {
-                gamma = value;
-                LogDebug($"Gamma: {value}");
-            });
-        
-        // Botones
-        CreateButton(panel.transform, "APLICAR", new Vector2(-100, -250), new Vector2(150, 45), 
-            () => LogDebug("Aplicando configuración de video..."));
-            
-        CreateButton(panel.transform, "VOLVER", new Vector2(100, -250), new Vector2(150, 45), 
-            () => uiManager?.ShowPanel("OptionsMain"));
-    }
+void GenerateVideoOptionsPanel()
+{
+    GameObject panel = CreateBasePanel("Video Options Panel", "VideoOptions");
+
+    CreateTitle(panel.transform, "OPCIONES DE VIDEO", new Vector2(0, 320));
+
+    int y = 250;
+
+    // ----- DISPLAY -----
+    CreateTitle(panel.transform, "Pantalla", new Vector2(0, y), 20);
+    y -= 40;
+
+    // Resoluciones populares
+    string[] resolutions = { "1920x1080", "1600x900", "1280x720", "1024x768" };
+    int currentResIndex = System.Array.FindIndex(resolutions, r =>
+        r == $"{ConfigurationManager.Graphics.resolution.x}x{ConfigurationManager.Graphics.resolution.y}");
+    if (currentResIndex < 0) currentResIndex = 0;
+    CreateDropdown(panel.transform, "Resolución:", new Vector2(0, y), resolutions, currentResIndex,
+        (int index) =>
+        {
+            string[] parts = resolutions[index].Split('x');
+            ConfigurationManager.Graphics.resolution = new Vector2Int(int.Parse(parts[0]), int.Parse(parts[1]));
+            LogDebug($"Resolución cambiada a: {resolutions[index]}");
+        });
+    y -= 40;
+
+    // Fullscreen
+    string[] fsModes = System.Enum.GetNames(typeof(FullScreenMode));
+    CreateDropdown(panel.transform, "Modo de Pantalla:", new Vector2(0, y), fsModes, (int)ConfigurationManager.Graphics.fullScreenMode,
+        (int index) =>
+        {
+            ConfigurationManager.Graphics.fullScreenMode = (FullScreenMode)index;
+            LogDebug($"FullScreen Mode: {fsModes[index]}");
+        });
+    y -= 40;
+
+    // Target framerate
+    CreateSlider(panel.transform, "Framerate objetivo:", new Vector2(0, y), new Vector2(200, 20), 30, 240,
+        ConfigurationManager.Graphics.targetFrameRate, (float value) =>
+        {
+            ConfigurationManager.Graphics.targetFrameRate = Mathf.RoundToInt(value);
+            LogDebug($"Framerate objetivo: {value}");
+        });
+    y -= 40;
+
+    // VSync
+    CreateToggle(panel.transform, "VSync", new Vector2(0, y), ConfigurationManager.Graphics.vSyncEnabled,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.vSyncEnabled = value;
+            LogDebug($"VSync: {value}");
+        });
+    y -= 50;
+
+    // ----- QUALITY -----
+    CreateTitle(panel.transform, "Calidad", new Vector2(0, y), 20);
+    y -= 40;
+
+    // Quality Level
+    string[] qualities = System.Enum.GetNames(typeof(QualityLevel));
+    CreateDropdown(panel.transform, "Calidad General:", new Vector2(0, y), qualities, (int)ConfigurationManager.Graphics.qualityLevel,
+        (int index) =>
+        {
+            ConfigurationManager.Graphics.qualityLevel = (QualityLevel)index;
+            LogDebug($"Calidad general: {qualities[index]}");
+        });
+    y -= 40;
+
+    // Texture Quality
+    CreateDropdown(panel.transform, "Calidad Texturas:", new Vector2(0, y),
+        new string[] { "Alta", "Media", "Baja", "Muy Baja" },
+        ConfigurationManager.Graphics.textureQuality, (int value) =>
+        {
+            ConfigurationManager.Graphics.textureQuality = value;
+            LogDebug($"Calidad de texturas: {value}");
+        });
+    y -= 40;
+
+    // Shadow Quality
+    CreateDropdown(panel.transform, "Calidad Sombras:", new Vector2(0, y),
+        new string[] { "Desactivado", "Baja", "Media", "Alta", "Ultra" },
+        ConfigurationManager.Graphics.shadowQuality, (int value) =>
+        {
+            ConfigurationManager.Graphics.shadowQuality = value;
+            LogDebug($"Calidad de sombras: {value}");
+        });
+    y -= 40;
+
+    // AntiAliasing
+    CreateDropdown(panel.transform, "AntiAliasing:", new Vector2(0, y),
+        new string[] { "Ninguno", "2x", "4x", "8x" },
+        (ConfigurationManager.Graphics.antiAliasing == 0) ? 0 :
+        (ConfigurationManager.Graphics.antiAliasing == 2) ? 1 :
+        (ConfigurationManager.Graphics.antiAliasing == 4) ? 2 : 3,
+        (int index) =>
+        {
+            int[] aaValues = { 0, 2, 4, 8 };
+            ConfigurationManager.Graphics.antiAliasing = aaValues[index];
+            LogDebug($"AntiAliasing: {aaValues[index]}");
+        });
+    y -= 40;
+
+    // Post processing
+    CreateToggle(panel.transform, "Post Procesado", new Vector2(0, y), ConfigurationManager.Graphics.enablePostProcessing,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enablePostProcessing = value;
+            LogDebug($"Post procesado: {value}");
+        });
+    y -= 50;
+
+    // ----- LIGHTING -----
+    CreateTitle(panel.transform, "Iluminación", new Vector2(0, y), 20);
+    y -= 40;
+
+    CreateToggle(panel.transform, "Iluminación Tiempo Real", new Vector2(0, y), ConfigurationManager.Graphics.enableRealTimeLighting,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableRealTimeLighting = value;
+            LogDebug($"Iluminación tiempo real: {value}");
+        });
+    y -= 40;
+
+    CreateToggle(panel.transform, "Sombras", new Vector2(0, y), ConfigurationManager.Graphics.enableShadows,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableShadows = value;
+            LogDebug($"Sombras: {value}");
+        });
+    y -= 40;
+
+    string[] shadowRes = System.Enum.GetNames(typeof(ShadowResolution));
+    CreateDropdown(panel.transform, "Resolución Sombras:", new Vector2(0, y), shadowRes, (int)ConfigurationManager.Graphics.shadowResolution,
+        (int value) =>
+        {
+            ConfigurationManager.Graphics.shadowResolution = (ShadowResolution)value;
+            LogDebug($"Resolución sombras: {shadowRes[value]}");
+        });
+    y -= 40;
+
+    CreateSlider(panel.transform, "Distancia Sombras:", new Vector2(0, y), new Vector2(200, 20), 10, 200,
+        ConfigurationManager.Graphics.shadowDistance, (float value) =>
+        {
+            ConfigurationManager.Graphics.shadowDistance = value;
+            LogDebug($"Distancia sombras: {value}");
+        });
+    y -= 50;
+
+    // ----- EFFECTS -----
+    CreateTitle(panel.transform, "Efectos", new Vector2(0, y), 20);
+    y -= 40;
+
+    CreateToggle(panel.transform, "Partículas", new Vector2(0, y), ConfigurationManager.Graphics.enableParticles,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableParticles = value;
+            LogDebug($"Partículas: {value}");
+        });
+    y -= 40;
+
+    CreateSlider(panel.transform, "Máx Partículas:", new Vector2(0, y), new Vector2(200, 20), 100, 5000,
+        ConfigurationManager.Graphics.maxParticles, (float value) =>
+        {
+            ConfigurationManager.Graphics.maxParticles = Mathf.RoundToInt(value);
+            LogDebug($"Máx partículas: {value}");
+        });
+    y -= 40;
+
+    CreateToggle(panel.transform, "Bloom", new Vector2(0, y), ConfigurationManager.Graphics.enableBloom,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableBloom = value;
+            LogDebug($"Bloom: {value}");
+        });
+    y -= 40;
+
+    CreateToggle(panel.transform, "Motion Blur", new Vector2(0, y), ConfigurationManager.Graphics.enableMotionBlur,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableMotionBlur = value;
+            LogDebug($"Motion Blur: {value}");
+        });
+    y -= 40;
+
+    CreateToggle(panel.transform, "Ambient Occlusion", new Vector2(0, y), ConfigurationManager.Graphics.enableAmbientOcclusion,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableAmbientOcclusion = value;
+            LogDebug($"Ambient Occlusion: {value}");
+        });
+    y -= 50;
+
+    // ----- PERFORMANCE -----
+    CreateTitle(panel.transform, "Rendimiento", new Vector2(0, y), 20);
+    y -= 40;
+
+    CreateToggle(panel.transform, "Occlusion Culling", new Vector2(0, y), ConfigurationManager.Graphics.enableOcclusion,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableOcclusion = value;
+            LogDebug($"Occlusion: {value}");
+        });
+    y -= 40;
+
+    CreateSlider(panel.transform, "LOD Bias:", new Vector2(0, y), new Vector2(200, 20), 0.1f, 2f,
+        ConfigurationManager.Graphics.lodBias, (float value) =>
+        {
+            ConfigurationManager.Graphics.lodBias = value;
+            LogDebug($"LOD Bias: {value}");
+        });
+    y -= 40;
+
+    CreateSlider(panel.transform, "Luces por Pixel:", new Vector2(0, y), new Vector2(200, 20), 0, 10,
+        ConfigurationManager.Graphics.pixelLightCount, (float value) =>
+        {
+            ConfigurationManager.Graphics.pixelLightCount = Mathf.RoundToInt(value);
+            LogDebug($"Luces por pixel: {value}");
+        });
+    y -= 40;
+
+    CreateToggle(panel.transform, "Instancing GPU", new Vector2(0, y), ConfigurationManager.Graphics.enableGPUInstancing,
+        (bool value) =>
+        {
+            ConfigurationManager.Graphics.enableGPUInstancing = value;
+            LogDebug($"Instancing GPU: {value}");
+        });
+    y -= 50;
+
+    // ----- BOTONES -----
+    CreateButton(panel.transform, "APLICAR", new Vector2(-100, y), new Vector2(150, 45),
+        () =>
+        {
+            ConfigurationManager.Graphics.ValidateValues();
+            ConfigurationManager.Graphics.ApplySettings();
+            LogDebug("Configuración gráfica aplicada.");
+        });
+
+    CreateButton(panel.transform, "VOLVER", new Vector2(100, y), new Vector2(150, 45),
+        () => uiManager?.ShowPanel("OptionsMain"));
+}
+
+
     
     void GenerateAudioOptionsPanel()
     {

@@ -35,8 +35,8 @@ public class GameplayConfig : ConfigurationBase
     public bool showDebugInfo = false;
     public bool godModeAvailable = false;
     public bool unlockAllAreas = false;
-    
-    protected override void ValidateValues()
+
+    public override void ValidateValues()
     {
         globalTimeScale = Mathf.Clamp(globalTimeScale, 0.1f, 3f);
         respawnDelay = Mathf.Max(0f, respawnDelay);

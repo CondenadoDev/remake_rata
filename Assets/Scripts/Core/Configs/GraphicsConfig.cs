@@ -34,7 +34,7 @@ public class GraphicsConfig : ConfigurationBase
     public int pixelLightCount = 4;
     public bool enableGPUInstancing = true;
     
-    protected override void ValidateValues()
+    public override void ValidateValues()
     {
         targetFrameRate = Mathf.Clamp(targetFrameRate, 30, 240);
         resolution.x = Mathf.Max(640, resolution.x);

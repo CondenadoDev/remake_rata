@@ -13,8 +13,8 @@ public abstract class ConfigurationBase : ScriptableObject
     {
         ValidateValues();
     }
-    
-    protected virtual void ValidateValues() { }
+
+    public virtual void ValidateValues() { }
     
     protected void DebugLog(string message)
     {
