@@ -1,9 +1,10 @@
+using UISystem.Core;
 using UnityEngine;
 
 /// <summary>
 /// Implementación concreta de UIPanel para uso con el generador
 /// </summary>
-public class ConcreteUIPanel : UIPanel
+public class ConcreteUIPanel BaseUIPanel
 {
     [Header("🎯 Panel Configuration")]
     

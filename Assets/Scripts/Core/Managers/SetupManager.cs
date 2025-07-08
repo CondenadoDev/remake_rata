@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using UISystem.Configuration;
+using UISystem.Core;
 
 #if UNITY_EDITOR
 using UnityEditor;

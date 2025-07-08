@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UISystem.Configuration;
 
 public class PlayerStats : MonoBehaviour
 {

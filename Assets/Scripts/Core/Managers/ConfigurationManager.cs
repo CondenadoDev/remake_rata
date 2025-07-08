@@ -1,74 +1,110 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
+using UISystem.Core;
 
-public class ConfigurationManager : MonoBehaviour
+namespace UISystem.Configuration
 {
-    [Header("📋 Configuration Assets")]
-    [SerializeField] private PlayerConfig playerConfig;
-    [SerializeField] private GameplayConfig gameplayConfig;
-    [SerializeField] private AudioConfig audioConfig;
-    [SerializeField] private GraphicsConfig graphicsConfig;
-    [SerializeField] private InputConfig inputConfig;
-    
-    // Singleton
-    public static ConfigurationManager Instance { get; private set; }
-    
-    // Properties para acceso fácil
-    public static PlayerConfig Player => Instance.playerConfig;
-    public static GameplayConfig Gameplay => Instance.gameplayConfig;
-    public static AudioConfig Audio => Instance.audioConfig;
-    public static GraphicsConfig Graphics => Instance.graphicsConfig;
-    public static InputConfig Input => Instance.inputConfig;
-    
-    // Eventos
-    public static event System.Action<ConfigurationBase> OnConfigurationChanged;
-    
-    void Awake()
+    public class ConfigurationManager : MonoBehaviour
     {
-        // Singleton setup
-        if (Instance != null && Instance != this)
+        private static ConfigurationManager _instance;
+
+        public static ConfigurationManager Instance
         {
-            Destroy(gameObject);
-            return;
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<ConfigurationManager>();
+                    if (_instance == null)
+                    {
+                        GameObject go = new GameObject("ConfigurationManager");
+                        _instance = go.AddComponent<ConfigurationManager>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+
+                return _instance;
+            }
         }
-        
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-        
-        LoadAllConfigurations();
+
+        [SerializeField] private ConfigurationProviderType defaultProvider = ConfigurationProviderType.PlayerPrefs;
+
+        private Dictionary<ConfigurationProviderType, IConfigurationProvider> providers;
+        private Dictionary<string, object> configCache;
+
+        public event Action<string, object> OnConfigurationChanged;
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+
+            InitializeProviders();
+            configCache = new Dictionary<string, object>();
+        }
+
+        private void InitializeProviders()
+        {
+            providers = new Dictionary<ConfigurationProviderType, IConfigurationProvider>
+            {
+                { ConfigurationProviderType.PlayerPrefs, new PlayerPrefsProvider() },
+                { ConfigurationProviderType.ScriptableObject, new ScriptableObjectProvider() },
+                { ConfigurationProviderType.FileSystem, new FileSystemProvider() }
+            };
+        }
+
+        public T GetConfiguration<T>(string key, ConfigurationProviderType? providerType = null) where T : class
+        {
+            var provider = providerType ?? defaultProvider;
+
+            // Check cache first
+            string cacheKey = $"{provider}_{key}";
+            if (configCache.TryGetValue(cacheKey, out object cached))
+            {
+                return cached as T;
+            }
+
+            // Load from provider
+            var config = providers[provider].LoadConfiguration<T>(key);
+            if (config != null)
+            {
+                configCache[cacheKey] = config;
+            }
+
+            return config;
+        }
+
+        public void SaveConfiguration<T>(string key, T data, ConfigurationProviderType? providerType = null)
+            where T : class
+        {
+            var provider = providerType ?? defaultProvider;
+            providers[provider].SaveConfiguration(key, data);
+
+            // Update cache
+            string cacheKey = $"{provider}_{key}";
+            configCache[cacheKey] = data;
+
+            // Notify listeners
+            OnConfigurationChanged?.Invoke(key, data);
+        }
+
+        public void ClearCache()
+        {
+            configCache.Clear();
+        }
     }
-    
-    void LoadAllConfigurations()
+
+    public enum ConfigurationProviderType
     {
-        // Cargar configuraciones desde Resources si no están asignadas
-        if (playerConfig == null)
-            playerConfig = Resources.Load<PlayerConfig>("Configs/PlayerConfig");
-        if (gameplayConfig == null)
-            gameplayConfig = Resources.Load<GameplayConfig>("Configs/GameplayConfig");
-        if (audioConfig == null)
-            audioConfig = Resources.Load<AudioConfig>("Configs/AudioConfig");
-        if (graphicsConfig == null)
-            graphicsConfig = Resources.Load<GraphicsConfig>("Configs/GraphicsConfig");
-        if (inputConfig == null)
-            inputConfig = Resources.Load<InputConfig>("Configs/InputConfig");
-        
-        Debug.Log("⚙️ ConfigurationManager loaded all configurations");
-    }
-    
-    public static void NotifyConfigurationChanged(ConfigurationBase config)
-    {
-        OnConfigurationChanged?.Invoke(config);
-    }
-    
-    public static T GetConfig<T>() where T : ConfigurationBase
-    {
-        if (typeof(T) == typeof(PlayerConfig)) return Instance.playerConfig as T;
-        if (typeof(T) == typeof(GameplayConfig)) return Instance.gameplayConfig as T;
-        if (typeof(T) == typeof(AudioConfig)) return Instance.audioConfig as T;
-        if (typeof(T) == typeof(GraphicsConfig)) return Instance.graphicsConfig as T;
-        if (typeof(T) == typeof(InputConfig)) return Instance.inputConfig as T;
-        
-        Debug.LogError($"❌ Configuration type {typeof(T)} not found!");
-        return null;
+        PlayerPrefs,
+        ScriptableObject,
+        FileSystem
     }
 }

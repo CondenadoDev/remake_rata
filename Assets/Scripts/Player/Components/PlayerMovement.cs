@@ -1,3 +1,4 @@
+using UISystem.Configuration;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour

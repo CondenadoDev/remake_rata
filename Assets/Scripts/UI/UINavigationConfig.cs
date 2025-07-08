@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using System.Linq;
+using UISystem.Core;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -256,7 +257,7 @@ public class UINavigationConfig : MonoBehaviour
     // Utilidades
     public bool IsPanelActive(string panelID)
     {
-        var panel = uiManager?.GetPanel(panelID);
+        var panel = uiManager.GetPanel<UIPanel>(panelID);
         return panel != null && panel.gameObject.activeInHierarchy;
     }
     

@@ -1,8 +1,9 @@
 
+using UISystem.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PauseMenuPanel : UIPanel
+public class PauseMenuPanel BaseUIPanel
 {
     [Header("🎛️ Buttons")]
     [SerializeField] private Button resumeButton;

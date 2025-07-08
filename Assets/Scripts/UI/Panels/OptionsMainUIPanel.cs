@@ -1,10 +1,11 @@
+using UISystem.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Panel principal de opciones
 /// </summary>
-public class OptionsMainUIPanel : UIPanel
+public class OptionsMainUIPanel BaseUIPanel
 {
     protected override void OnInitialize()
     {

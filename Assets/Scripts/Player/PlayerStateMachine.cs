@@ -1,6 +1,7 @@
 // PlayerStateMachine.cs
 using UnityEngine;
 using System.Collections.Generic;
+using UISystem.Configuration;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(Animator))]

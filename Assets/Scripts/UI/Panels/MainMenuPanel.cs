@@ -1,10 +1,11 @@
+using UISystem.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Panel específico para el menú principal
 /// </summary>
-public class MainMenuUIPanel : UIPanel
+public class MainMenuUIPanel BaseUIPanel
 {
     [Header("🎮 Main Menu Buttons")]
     public Button newGameButton;

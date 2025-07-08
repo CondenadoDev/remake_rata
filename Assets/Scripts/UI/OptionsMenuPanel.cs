@@ -2,9 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using UISystem.Configuration;
+using UISystem.Core;
 using UnityEngine.Events;
 
-public class OptionsMenuPanel : UIPanel
+public class OptionsMenuPanel BaseUIPanel
 {
     [Header("🔊 Audio Options")]
     [SerializeField] private Slider masterVolumeSlider;

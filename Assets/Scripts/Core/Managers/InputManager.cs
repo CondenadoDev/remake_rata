@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Collections;
+using UISystem.Configuration;
 using InputConfig = InputConfig;
 
 public class InputManager : MonoBehaviour

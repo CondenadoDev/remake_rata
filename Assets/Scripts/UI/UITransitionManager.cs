@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UISystem.Core;
 
 /// <summary>
 /// Maneja las transiciones visuales entre paneles UI
