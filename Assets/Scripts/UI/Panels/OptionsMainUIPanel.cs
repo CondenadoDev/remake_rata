@@ -1,12 +1,17 @@
 using UISystem.Core;
+using UISystem.Panels;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Panel principal de opciones
 /// </summary>
-public class OptionsMainUIPanel BaseUIPanel
+public class OptionsMainUIPanel : BaseUIPanel
 {
+    [Header("\uD83D\uDCCD Panel Configuration")]
+    [SerializeField] private string panelID = "";
+    [SerializeField] private bool startVisible = true;
+    [SerializeField] private bool useScaleAnimation = true;
     protected override void OnInitialize()
     {
         panelID = "OptionsMain";
@@ -34,5 +39,10 @@ public class OptionsMainUIPanel BaseUIPanel
             gameplayBtn.onClick.AddListener(() => UIManager.Instance?.ShowPanel("GameplayOptions"));
         if (backBtn != null)
             backBtn.onClick.AddListener(() => UIManager.Instance?.ShowPanel("MainMenu"));
+    }
+
+    void LogDebug(string message)
+    {
+        Debug.Log($"[OptionsMainUIPanel] {message}");
     }
 }

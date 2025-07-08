@@ -1,10 +1,16 @@
 
 using UISystem.Core;
+using UISystem.Panels;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PauseMenuPanel BaseUIPanel
+public class PauseMenuPanel : BaseUIPanel
 {
+    [Header("\uD83D\uDCCD Panel Configuration")]
+    [SerializeField] private string panelID = "";
+    [SerializeField] private bool startVisible = true;
+    [SerializeField] private bool useScaleAnimation = true;
+    [SerializeField] private bool blockGameInput = false;
     [Header("🎛️ Buttons")]
     [SerializeField] private Button resumeButton;
     [SerializeField] private Button optionsButton;
@@ -286,5 +292,20 @@ public class PauseMenuPanel BaseUIPanel
     {
         UnsubscribeFromEvents();
         LogDebug("Pause Menu Panel destroyed");
+    }
+
+    void LogDebug(string message)
+    {
+        Debug.Log($"[PauseMenuPanel] {message}");
+    }
+
+    void LogError(string message)
+    {
+        Debug.LogError($"[PauseMenuPanel] {message}");
+    }
+
+    void LogWarning(string message)
+    {
+        Debug.LogWarning($"[PauseMenuPanel] {message}");
     }
 }
