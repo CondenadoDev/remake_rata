@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Collections;
-using InputConfig = InputConfig;
 
 public class InputManager : MonoBehaviour
 {
@@ -65,7 +64,8 @@ public class InputManager : MonoBehaviour
         
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        
+
+        ApplyConfigurationValues();
         InitializeInputSystem();
     }
     
@@ -516,6 +516,19 @@ public class InputManager : MonoBehaviour
         {
             Debug.Log($"🎮 Input [{inputName}]: {value}");
         }
+    }
+
+    /// <summary>
+    /// Apply configuration values from the global InputConfig to this manager.
+    /// </summary>
+    public void ApplyConfigurationValues()
+    {
+        if (ConfigurationManager.Instance == null || ConfigurationManager.Input == null)
+            return;
+
+        var config = ConfigurationManager.Input;
+        enableInputBuffering = config.bufferInputs;
+        inputBufferTime = config.inputBufferTime;
     }
     
     void ToggleDebugMode()
