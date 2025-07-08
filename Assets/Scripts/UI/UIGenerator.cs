@@ -1,5 +1,6 @@
  using System.Collections.Generic;
  using TMPro;
+ using UISystem.Binding;
  using UISystem.Configuration;
  using UISystem.Core;
  using UISystem.Panels;
@@ -24,7 +25,7 @@
         
         [Header("Layout")]
         [SerializeField] private float elementSpacing = 10f;
-        [SerializeField] private RectOffset padding = new RectOffset(20, 20, 20, 20);
+        [SerializeField] private RectOffset padding; 
         
         private Dictionary<string, GameObject> generatedPanels = new Dictionary<string, GameObject>();
 
@@ -34,6 +35,8 @@
             {
                 GenerateUI();
             }
+            if (padding == null)
+                padding = new RectOffset(20, 20, 20, 20);
         }
 
         public void GenerateUI()

@@ -26,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<CharacterController>();
-        config = ConfigurationManager.Player;
+        config = ConfigurationManager.Instance.Player;
         
         // Encontrar cámara
         Camera mainCam = Camera.main;

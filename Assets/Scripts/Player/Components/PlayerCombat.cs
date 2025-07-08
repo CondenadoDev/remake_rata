@@ -25,7 +25,7 @@ public class PlayerCombat : MonoBehaviour
     
     void Awake()
     {
-        config = ConfigurationManager.Player;
+        config = ConfigurationManager.Instance.Player;
         animator = GetComponent<Animator>();
         
         // Crear punto de ataque si no existe

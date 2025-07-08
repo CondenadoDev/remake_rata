@@ -54,7 +54,7 @@ public class PlayerStateMachine : MonoBehaviour
         // Cargar configuración si no está asignada
         if (config == null)
         {
-            config = ConfigurationManager.Player;
+            config = ConfigurationManager.Instance.Player;
         }
     }
     

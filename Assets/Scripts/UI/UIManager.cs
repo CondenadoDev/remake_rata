@@ -13,7 +13,7 @@ namespace UISystem.Core
     {
         public static event Action<string> OnPanelOpened;
         public static event Action<string> OnPanelClosed;
-        public static event Action<UIPanel, UIPanel> OnPanelSwitched;
+        public static event Action<BaseUIPanel, BaseUIPanel> OnPanelSwitched;
         
         private static UIManager _instance;
 
@@ -107,7 +107,7 @@ namespace UISystem.Core
             RegisterExistingPanels();
         }
 
-        private void RegisterExistingPanels()
+        public void RegisterExistingPanels()
         {
             BaseUIPanel[] existingPanels = panelContainer.GetComponentsInChildren<BaseUIPanel>(true);
             foreach (var panel in existingPanels)
@@ -175,7 +175,7 @@ namespace UISystem.Core
             // --- LLAMA EVENTO DE CAMBIO DE PANEL ---
             if (previousPanel != null && previousPanel != panel)
             {
-                OnPanelSwitched?.Invoke(previousPanel as UIPanel, panel as UIPanel);
+                OnPanelSwitched?.Invoke(previousPanel, panel);
             }
         }
 

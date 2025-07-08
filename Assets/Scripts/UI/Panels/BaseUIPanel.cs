@@ -12,13 +12,13 @@ namespace UISystem.Panels
     public abstract class BaseUIPanel : MonoBehaviour, IUIElement
     {
         [Header("Panel Settings")] [SerializeField]
-        protected string panelId;
+        public string panelId;
 
-        [SerializeField] protected bool startHidden = true;
+        [SerializeField] public bool startHidden = true;
         [SerializeField] protected float animationDuration = 0.3f;
 
-        [Header("Animation")] [SerializeField] protected PanelAnimation showAnimation = PanelAnimation.FadeScale;
-        [SerializeField] protected PanelAnimation hideAnimation = PanelAnimation.FadeScale;
+        [Header("Animation")] [SerializeField] public PanelAnimation showAnimation = PanelAnimation.FadeScale;
+        [SerializeField] public PanelAnimation hideAnimation = PanelAnimation.FadeScale;
         [SerializeField] protected Ease easeType = Ease.OutBack;
 
         protected CanvasGroup canvasGroup;

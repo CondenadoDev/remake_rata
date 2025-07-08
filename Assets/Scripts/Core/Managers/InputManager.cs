@@ -4,7 +4,6 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Collections;
 using UISystem.Configuration;
-using InputConfig = InputConfig;
 
 public class InputManager : MonoBehaviour
 {
@@ -217,7 +216,10 @@ public class InputManager : MonoBehaviour
         if (currentContext != InputContext.Gameplay) return;
         
         // Aplicar dead zone
-        input = ApplyDeadzone(input, ConfigurationManager.Input.gamepadDeadzone);
+        float deadzone = ConfigurationManager.Instance != null && ConfigurationManager.Instance.Input != null
+            ? ConfigurationManager.Instance.Input.gamepadDeadzone
+            : 0.1f;
+        input = ApplyDeadzone(input, deadzone);
         
         OnMoveInput?.Invoke(input);
         LogInput("Move", input.ToString());
@@ -269,27 +271,31 @@ public class InputManager : MonoBehaviour
     {
         if (currentContext != InputContext.Gameplay) return;
 
-        if (ConfigurationManager.Instance == null || ConfigurationManager.Input == null)
+        var configManager = ConfigurationManager.Instance;
+        var inputConfig = configManager != null ? configManager.Input : null;
+
+        if (inputConfig == null)
         {
             Debug.LogError("❌ ConfigurationManager o su InputConfig están null.");
             return;
         }
 
         float sensitivity = Gamepad.current != null ?
-            ConfigurationManager.Input.gamepadSensitivity :
-            ConfigurationManager.Input.mouseSensitivity;
+            inputConfig.gamepadSensitivity :
+            inputConfig.mouseSensitivity;
 
         bool invertY = Gamepad.current != null ?
-            ConfigurationManager.Input.invertGamepadY :
-            ConfigurationManager.Input.invertMouseY;
+            inputConfig.invertGamepadY :
+            inputConfig.invertMouseY;
 
         if (invertY)
             input.y = -input.y;
 
+        input *= sensitivity;
+
         OnLookInput?.Invoke(input);
     }
 
-    
     void HandleTargetLockInput()
     {
         if (currentContext != InputContext.Gameplay) return;
@@ -495,7 +501,8 @@ public class InputManager : MonoBehaviour
     
     public void SetVibration(float leftMotor, float rightMotor, float duration = 0.2f)
     {
-        if (Gamepad.current != null && ConfigurationManager.Input.enableGamepadVibration)
+        var inputConfig = ConfigurationManager.Instance != null ? ConfigurationManager.Instance.Input : null;
+        if (Gamepad.current != null && inputConfig != null && inputConfig.enableGamepadVibration)
         {
             Gamepad.current.SetMotorSpeeds(leftMotor, rightMotor);
             StartCoroutine(StopVibrationAfterDelay(duration));

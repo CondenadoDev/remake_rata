@@ -452,16 +452,18 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void ApplyConfigurationValues()
     {
-        if (ConfigurationManager.Instance == null || ConfigurationManager.Audio == null)
+        // Obtiene el ScriptableObject AudioConfig desde el ConfigurationManager
+        var audioConfig = UISystem.Configuration.ConfigurationManager.Instance.GetConfiguration<AudioConfig>("AudioConfig");
+        if (audioConfig == null)
             return;
 
-        var config = ConfigurationManager.Audio;
-
-        SetMasterVolume(config.masterVolume);
-        SetMusicVolume(config.musicVolume);
-        SetSFXVolume(config.sfxVolume);
-        SetUIVolume(config.uiVolume);
-        SetAmbienceVolume(config.ambienceVolume);
+        SetMasterVolume(audioConfig.masterVolume);
+        SetMusicVolume(audioConfig.musicVolume);
+        SetSFXVolume(audioConfig.sfxVolume);
+        // No tienes un campo uiVolume, así que lo removí.
+        SetAmbienceVolume(audioConfig.ambientVolume);
+        // Si implementas control de voz, puedes agregar:
+        // SetVoiceVolume(audioConfig.voiceVolume);
     }
     
     #endregion

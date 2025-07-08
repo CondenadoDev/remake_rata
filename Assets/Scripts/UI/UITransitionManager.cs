@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UISystem.Core;
+using UISystem.Panels;
 
 /// <summary>
 /// Maneja las transiciones visuales entre paneles UI
@@ -155,42 +156,42 @@ public class UITransitionManager : MonoBehaviour
     void OnPanelOpened(string panelID)
     {
         if (!enableTransitions) return;
-        
-        UIPanel panel = uiManager.GetPanel(panelID);
+    
+        BaseUIPanel panel = uiManager.GetPanel<BaseUIPanel>(panelID); // <-- CAMBIADO
         if (panel != null)
         {
             UITransitionSettings settings = GetTransitionSettings(panelID, true);
             AudioClip sound = GetPanelSound(panelID, true);
-            
+
             var transition = StartCoroutine(AnimatePanel(panel, settings, true, sound));
             activeTransitions.Add(transition);
         }
     }
-    
+
     void OnPanelClosed(string panelID)
     {
         if (!enableTransitions) return;
-        
-        UIPanel panel = uiManager.GetPanel(panelID);
+    
+        BaseUIPanel panel = uiManager.GetPanel<BaseUIPanel>(panelID); // <-- CAMBIADO
         if (panel != null)
         {
             UITransitionSettings settings = GetTransitionSettings(panelID, false);
             AudioClip sound = GetPanelSound(panelID, false);
-            
+
             var transition = StartCoroutine(AnimatePanel(panel, settings, false, sound));
             activeTransitions.Add(transition);
         }
     }
     
-    void OnPanelSwitched(UIPanel fromPanel, UIPanel toPanel)
+    void OnPanelSwitched(BaseUIPanel fromPanel, BaseUIPanel toPanel)
     {
         if (!enableTransitions) return;
-        
+    
         // Efectos especiales para transiciones específicas
         if (fromPanel != null && toPanel != null)
         {
             // Por ejemplo, efecto especial al ir del menú principal al juego
-            if (fromPanel.panelID == "MainMenu" && toPanel.panelID == "HUD")
+            if (fromPanel.PanelId == "MainMenu" && toPanel.PanelId == "HUD")
             {
                 StartCoroutine(SpecialGameStartTransition());
             }
@@ -222,7 +223,7 @@ public class UITransitionManager : MonoBehaviour
     }
     
     // Animaciones principales
-    IEnumerator AnimatePanel(UIPanel panel, UITransitionSettings settings, bool isOpening, AudioClip sound)
+    IEnumerator AnimatePanel(BaseUIPanel panel, UITransitionSettings settings, bool isOpening, AudioClip sound)
     {
         if (panel == null) yield break;
         
@@ -485,9 +486,10 @@ public class UITransitionManager : MonoBehaviour
     }
     
     // Métodos públicos para control manual
-    public void PlayTransition(string panelID, UITransitionType transitionType, float duration = 0.3f)
+    public void PlayTransition(string panelID, UITransitionType transitionType, float duration = 0.3f) 
     {
-        UIPanel panel = uiManager?.GetPanel(panelID);
+        // Llama a GetPanel<BaseUIPanel> en vez de GetPanel
+        BaseUIPanel panel = uiManager?.GetPanel<BaseUIPanel>(panelID);
         if (panel != null)
         {
             UITransitionSettings customSettings = new UITransitionSettings
@@ -495,10 +497,11 @@ public class UITransitionManager : MonoBehaviour
                 transitionType = transitionType,
                 duration = duration
             };
-            
+        
             StartCoroutine(AnimatePanel(panel, customSettings, true, null));
         }
     }
+
     
     public void StopAllTransitions()
     {
@@ -589,7 +592,7 @@ public class UITransitionManager : MonoBehaviour
             
             // Crear un panel temporal
             ConcreteUIPanel panel = testPanel.AddComponent<ConcreteUIPanel>();
-            panel.panelID = $"Test_{type}";
+            panel.panelId = $"Test_{type}";
             
             // Configurar transición
             UITransitionSettings settings = new UITransitionSettings

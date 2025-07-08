@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using System.Linq;
 using UISystem.Core;
+using UISystem.Panels;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -257,7 +258,7 @@ public class UINavigationConfig : MonoBehaviour
     // Utilidades
     public bool IsPanelActive(string panelID)
     {
-        var panel = uiManager.GetPanel<UIPanel>(panelID);
+        var panel = uiManager.GetPanel<BaseUIPanel>(panelID);
         return panel != null && panel.gameObject.activeInHierarchy;
     }
     
@@ -348,40 +349,40 @@ public class UINavigationConfig : MonoBehaviour
     public void AutoDetectPanels()
     {
         panelConfigs.Clear();
-        
-        UIPanel[] allPanels = FindObjectsOfType<UIPanel>(true);
+    
+        BaseUIPanel[] allPanels = FindObjectsOfType<BaseUIPanel>(true);
         foreach (var panel in allPanels)
         {
             var config = new UIPanelConfig
             {
-                panelID = panel.panelID,
+                panelID = panel.PanelId,  // Asegúrate de usar la propiedad correcta
                 panelObject = panel.gameObject,
-                isMainPanel = panel.panelID == "MainMenu"
+                isMainPanel = panel.PanelId == "MainMenu"
             };
-            
+        
             // Auto-detectar botones y crear enlaces
             Button[] buttons = panel.GetComponentsInChildren<Button>(true);
             foreach (var button in buttons)
             {
                 // Intentar inferir el destino por el nombre del botón
                 string buttonName = button.name.ToLower();
-                string targetPanel = InferTargetPanel(buttonName, panel.panelID);
-                
+                string targetPanel = InferTargetPanel(buttonName, panel.PanelId);
+
                 if (!string.IsNullOrEmpty(targetPanel))
                 {
                     config.navigationLinks.Add(new UINavigationLink
                     {
                         linkName = $"{button.name} Link",
-                        fromPanel = panel.panelID,
+                        fromPanel = panel.PanelId,
                         toPanel = targetPanel,
                         triggerButton = button
                     });
                 }
             }
-            
+        
             panelConfigs.Add(config);
         }
-        
+    
         Debug.Log($"✅ Auto-detected {panelConfigs.Count} panels");
     }
     

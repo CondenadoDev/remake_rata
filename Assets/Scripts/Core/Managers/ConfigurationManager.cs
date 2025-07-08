@@ -23,17 +23,66 @@ namespace UISystem.Configuration
                         DontDestroyOnLoad(go);
                     }
                 }
-
                 return _instance;
             }
         }
 
         [SerializeField] private ConfigurationProviderType defaultProvider = ConfigurationProviderType.PlayerPrefs;
 
+        [Header("🔊 Global Scriptable Configs")]
+        [SerializeField] private AudioConfig audioConfig;
+        [SerializeField] private InputConfig inputConfig;
+        [SerializeField] private PlayerConfig playerConfig;
+        [SerializeField] private GraphicsConfig graphicsConfig; // AGREGADO
+
         private Dictionary<ConfigurationProviderType, IConfigurationProvider> providers;
         private Dictionary<string, object> configCache;
 
         public event Action<string, object> OnConfigurationChanged;
+
+        // === Propiedades de acceso rápido universal ===
+
+        public AudioConfig Audio
+        {
+            get
+            {
+                if (audioConfig == null)
+                    audioConfig = GetConfiguration<AudioConfig>("AudioConfig");
+                return audioConfig;
+            }
+        }
+
+        public InputConfig Input
+        {
+            get
+            {
+                if (inputConfig == null)
+                    inputConfig = GetConfiguration<InputConfig>("InputConfig");
+                return inputConfig;
+            }
+        }
+
+        public PlayerConfig Player
+        {
+            get
+            {
+                if (playerConfig == null)
+                    playerConfig = GetConfiguration<PlayerConfig>("PlayerConfig");
+                return playerConfig;
+            }
+        }
+
+        public GraphicsConfig Graphics // AGREGADO
+        {
+            get
+            {
+                if (graphicsConfig == null)
+                    graphicsConfig = GetConfiguration<GraphicsConfig>("GraphicsConfig");
+                return graphicsConfig;
+            }
+        }
+
+        // === Unity Methods ===
 
         private void Awake()
         {
@@ -59,6 +108,8 @@ namespace UISystem.Configuration
                 { ConfigurationProviderType.FileSystem, new FileSystemProvider() }
             };
         }
+
+        // === Métodos generales ===
 
         public T GetConfiguration<T>(string key, ConfigurationProviderType? providerType = null) where T : ScriptableObject
         {

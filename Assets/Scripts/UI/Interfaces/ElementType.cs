@@ -3,6 +3,8 @@ public enum ElementType
     Button,
     Slider,
     Dropdown,
-    InputField
+    InputField,
+    Toggle,
+    Text
     // Agrega otros tipos si necesitas más controles
 }

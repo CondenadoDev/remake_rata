@@ -181,13 +181,13 @@ public class OptionsMenuPanel : BaseUIPanel
     
     void LoadGraphicsSettings()
     {
-        if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+        if (UIValidation.ValidateManager(ConfigurationManager.Instance.Graphics, "GraphicsConfig"))
         {
-            var graphicsConfig = ConfigurationManager.Graphics;
+            var graphicsConfig = ConfigurationManager.Instance.Graphics;
             
             SetDropdownValue(qualityDropdown, (int)graphicsConfig.qualityLevel);
             SetToggleValue(fullscreenToggle, graphicsConfig.fullScreenMode == FullScreenMode.FullScreenWindow);
-            SetToggleValue(vSyncToggle, graphicsConfig.vSyncEnabled);
+            SetToggleValue(vSyncToggle, graphicsConfig.vSync);
             
             // Set resolution dropdown to current resolution
             SetCurrentResolution();
@@ -196,9 +196,9 @@ public class OptionsMenuPanel : BaseUIPanel
     
     void LoadInputSettings()
     {
-        if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+        if (UIValidation.ValidateManager(ConfigurationManager.Instance.Input, "InputConfig"))
         {
-            var inputConfig = ConfigurationManager.Input;
+            var inputConfig = ConfigurationManager.Instance.Input;
             
             SetSliderValue(mouseSensitivitySlider, inputConfig.mouseSensitivity, mouseSensitivityText);
             SetToggleValue(invertMouseYToggle, inputConfig.invertMouseY);
@@ -302,9 +302,9 @@ public class OptionsMenuPanel : BaseUIPanel
         {
             QualitySettings.SetQualityLevel(qualityIndex);
             
-            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Graphics, "GraphicsConfig"))
             {
-                ConfigurationManager.Graphics.qualityLevel = (QualityLevel)qualityIndex;
+                ConfigurationManager.Instance.Graphics.qualityLevel = qualityIndex;
             }
             
             LogDebug($"Quality level changed: {qualityIndex}");
@@ -342,9 +342,9 @@ public class OptionsMenuPanel : BaseUIPanel
         {
             Screen.fullScreen = isFullscreen;
             
-            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Graphics, "GraphicsConfig"))
             {
-                ConfigurationManager.Graphics.fullScreenMode = isFullscreen ? 
+                ConfigurationManager.Instance.Graphics.fullScreenMode = isFullscreen ? 
                     FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
             }
             
@@ -364,9 +364,9 @@ public class OptionsMenuPanel : BaseUIPanel
         {
             QualitySettings.vSyncCount = enabled ? 1 : 0;
             
-            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Graphics, "GraphicsConfig"))
             {
-                ConfigurationManager.Graphics.vSyncEnabled = enabled;
+                ConfigurationManager.Instance.Graphics.vSync = enabled;
             }
             
             LogDebug($"VSync changed: {enabled}");
@@ -387,9 +387,9 @@ public class OptionsMenuPanel : BaseUIPanel
         
         try
         {
-            if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Input, "InputConfig"))
             {
-                ConfigurationManager.Input.mouseSensitivity = value;
+                ConfigurationManager.Instance.Input.mouseSensitivity = value;
                 UpdateSensitivityText(value);
                 LogDebug($"Mouse sensitivity changed: {value:F1}");
             }
@@ -406,9 +406,9 @@ public class OptionsMenuPanel : BaseUIPanel
         
         try
         {
-            if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Input, "InputConfig"))
             {
-                ConfigurationManager.Input.invertMouseY = inverted;
+                ConfigurationManager.Instance.Input.invertMouseY = inverted;
                 LogDebug($"Invert mouse Y changed: {inverted}");
             }
         }
@@ -479,51 +479,52 @@ public class OptionsMenuPanel : BaseUIPanel
             }
         }
     }
-    
+
     void ResetToDefaults()
     {
         try
         {
             LogDebug("Resetting to default settings");
-            
+
             // Reset audio
             if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
             {
                 AudioManager.Instance.SetMasterVolume(1f);
                 AudioManager.Instance.SetMusicVolume(0.7f);
                 AudioManager.Instance.SetSFXVolume(0.8f);
+                AudioManager.Instance.ApplyConfigurationValues(); // Solo si existe
             }
-            
+
             // Reset graphics
-            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Graphics, "GraphicsConfig"))
             {
-                var config = ConfigurationManager.Graphics;
-                config.qualityLevel = QualityLevel.High;
-                config.vSyncEnabled = true;
+                var config = ConfigurationManager.Instance.Graphics;
+                int highIndex = System.Array.IndexOf(QualitySettings.names, "High");
+                if (highIndex >= 0)
+                    config.qualityLevel = highIndex;
+                else
+                    config.qualityLevel = 3;
+                config.vSync = true;
                 config.fullScreenMode = FullScreenMode.FullScreenWindow;
                 config.ValidateValues();
+
+                // Aplica los cambios gráficos si tienes el método implementado
+                config.ApplySettings();
             }
-            
+
             // Reset input
-            if (UIValidation.ValidateManager(ConfigurationManager.Input, "InputConfig"))
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Input, "InputConfig"))
             {
-                var config = ConfigurationManager.Input;
+                var config = ConfigurationManager.Instance.Input;
                 config.mouseSensitivity = 2f;
                 config.invertMouseY = false;
                 config.ValidateValues();
-            }
-            
-            // Apply changes
-            if (UIValidation.ValidateManager(InputManager.Instance, "InputManager"))
-            {
-                InputManager.Instance.ApplyConfigurationValues();
+
+                // Aplica los cambios de input si tienes el método implementado
+                //ApplyInputSettings(); // Si tienes este método
             }
 
-            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
-            {
-                AudioManager.Instance.ApplyConfigurationValues();
-            }
-
+            // Recarga las settings para refrescar la UI
             LoadCurrentSettings();
 
             LogDebug("Settings reset to defaults");
@@ -533,31 +534,23 @@ public class OptionsMenuPanel : BaseUIPanel
             LogError($"Failed to reset to defaults: {e.Message}");
         }
     }
-    
+
     void ApplySettings()
     {
         try
         {
             LogDebug("Applying settings");
 
-            // Graphics
-            if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
+            // --- Graphics ---
+            if (UIValidation.ValidateManager(ConfigurationManager.Instance.Graphics, "GraphicsConfig"))
             {
-                ConfigurationManager.Graphics.ValidateValues();
-                ConfigurationManager.Graphics.ApplySettings();
+                var graphicsConfig = ConfigurationManager.Instance.Graphics;
+                graphicsConfig.ValidateValues();
+                graphicsConfig.ApplySettings();
             }
 
-            // Audio
-            if (UIValidation.ValidateManager(AudioManager.Instance, "AudioManager"))
-            {
-                AudioManager.Instance.ApplyConfigurationValues();
-            }
-
-            // Input
-            if (UIValidation.ValidateManager(InputManager.Instance, "InputManager"))
-            {
-                InputManager.Instance.ApplyConfigurationValues();
-            }
+            // --- Audio ---
+            // Aquí puedes dejar esto vacío o poner lógica si agregas algo luego
 
             LogDebug("Settings applied successfully");
         }

@@ -31,7 +31,7 @@ public class PlayerStats : MonoBehaviour
     
     void Awake()
     {
-        config = ConfigurationManager.Player;
+        config = ConfigurationManager.Instance.Player;
         healthSystem = GetComponent<HealthSystem>();
         
         // Inicializar stats

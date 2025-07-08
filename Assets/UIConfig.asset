@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fbf886839a847329ee90792e06f7cd2, type: 3}
+  m_Name: UIConfig
+  m_EditorClassIdentifier: 
+  panels:
+  - panelId: Menu
+    displayName: Menu
+    panelType: 0
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements:
+    - elementId: Opciones
+      displayText: Opciones
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: Opciones
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Element_1
+      displayText: New Element
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: 
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+  - panelId: Settings
+    displayName: Settings
+    panelType: 1
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  - panelId: HUD
+    displayName: HUD
+    panelType: 2
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  - panelId: Dialog
+    displayName: Dialog
+    panelType: 3
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  - panelId: Inventory
+    displayName: Inventory
+    panelType: 4
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  theme:
+    primaryColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+    secondaryColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+    backgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+    defaultFont: {fileID: 0}
+    defaultFontSize: 14
+  navigation:
+    enableKeyboardNavigation: 1
+    enableGamepadNavigation: 1
+    wrapAround: 1
+    submitKey: 13
+    cancelKey: 27

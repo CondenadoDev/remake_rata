@@ -24,7 +24,7 @@ public class GraphicsSettingsPanel : SettingsPanel<GraphicsConfig>
         QualitySettings.shadowDistance = config.shadowDistance;
             
         // Apply texture quality
-        QualitySettings.masterTextureLimit = config.textureQuality;
+        QualitySettings.globalTextureMipmapLimit = config.textureQuality;
         QualitySettings.lodBias = config.lodBias;
         QualitySettings.anisotropicFiltering = config.anisotropicFiltering;
         QualitySettings.antiAliasing = config.antiAliasing;

@@ -13,7 +13,7 @@ namespace UISystem.Binding
     public abstract class DataBinding : MonoBehaviour, IDataBinding
     {
         [SerializeField] public string propertyPath;
-        [SerializeField] protected BindingMode bindingMode = BindingMode.TwoWay;
+        [SerializeField] public BindingMode bindingMode = BindingMode.TwoWay;
         [SerializeField] protected UpdateTrigger updateTrigger = UpdateTrigger.OnValueChanged;
 
         protected object source;
