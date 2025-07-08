@@ -38,8 +38,8 @@ public class PlayerConfig : ConfigurationBase
     public float lockOnRange = 15f;
     public float lockOnLoseRange = 20f;
     public LayerMask targetLayers = -1;
-    
-    protected override void ValidateValues()
+
+    public override void ValidateValues()
     {
         walkSpeed = Mathf.Max(0.1f, walkSpeed);
         runSpeed = Mathf.Max(walkSpeed, runSpeed);

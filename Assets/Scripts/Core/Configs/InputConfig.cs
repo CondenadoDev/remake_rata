@@ -29,8 +29,8 @@ public class InputConfig : ConfigurationBase
     public float holdTime = 0.5f;
     public bool bufferInputs = true;
     public float inputBufferTime = 0.2f;
-    
-    protected override void ValidateValues()
+
+    public override void ValidateValues()
     {
         mouseSensitivity = Mathf.Clamp(mouseSensitivity, 0.1f, 10f);
         mouseSmoothing = Mathf.Max(0.1f, mouseSmoothing);
