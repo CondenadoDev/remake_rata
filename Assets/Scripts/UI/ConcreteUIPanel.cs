@@ -1,28 +1,26 @@
 using UISystem.Core;
+using UISystem.Panels;
 using UnityEngine;
 
 /// <summary>
 /// Implementación concreta de UIPanel para uso con el generador
 /// </summary>
-public class ConcreteUIPanel BaseUIPanel
+public class ConcreteUIPanel : BaseUIPanel
 {
     [Header("🎯 Panel Configuration")]
-    
+    [SerializeField] private string panelID = "";
+    [SerializeField] private bool startVisible = true;
+    [SerializeField] private bool useScaleAnimation = true;
+
     [Header("🔧 Custom Actions")]
     public UnityEngine.Events.UnityEvent onPanelShown;
     public UnityEngine.Events.UnityEvent onPanelHidden;
     
     protected override void OnInitialize()
     {
-        // Configurar propiedades usando reflection para compatibilidad
-        var startVisibleField = typeof(UIPanel).GetField("startVisible", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        
-        if (startVisibleField != null)
-        {
-            startVisibleField.SetValue(this, startVisible);
-        }
-        
+        // Apply initial visibility
+        startHidden = !startVisible;
+
         LogDebug($"ConcreteUIPanel '{panelID}' initialized");
     }
     
@@ -119,5 +117,10 @@ public class ConcreteUIPanel BaseUIPanel
         {
             UIManager.Instance.PlayClickSound();
         }
+    }
+
+    void LogDebug(string message)
+    {
+        Debug.Log($"[ConcreteUIPanel] {message}");
     }
 }

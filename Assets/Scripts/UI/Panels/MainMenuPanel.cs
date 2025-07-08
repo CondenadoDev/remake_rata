@@ -1,12 +1,17 @@
 using UISystem.Core;
+using UISystem.Panels;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Panel específico para el menú principal
 /// </summary>
-public class MainMenuUIPanel BaseUIPanel
+public class MainMenuUIPanel : BaseUIPanel
 {
+    [Header("\uD83D\uDCCD Panel Configuration")]
+    [SerializeField] private string panelID = "";
+    [SerializeField] private bool startVisible = true;
+    [SerializeField] private bool useScaleAnimation = true;
     [Header("🎮 Main Menu Buttons")]
     public Button newGameButton;
     public Button loadGameButton;
@@ -53,5 +58,10 @@ public class MainMenuUIPanel BaseUIPanel
 #endif
             });
         }
+    }
+
+    void LogDebug(string message)
+    {
+        Debug.Log($"[MainMenuUIPanel] {message}");
     }
 }

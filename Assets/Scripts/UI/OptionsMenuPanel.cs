@@ -4,10 +4,16 @@ using TMPro;
 using System.Collections.Generic;
 using UISystem.Configuration;
 using UISystem.Core;
+using UISystem.Panels;
 using UnityEngine.Events;
 
-public class OptionsMenuPanel BaseUIPanel
+public class OptionsMenuPanel : BaseUIPanel
 {
+    [Header("\uD83D\uDCCD Panel Configuration")]
+    [SerializeField] private string panelID = "";
+    [SerializeField] private bool startVisible = true;
+    [SerializeField] private bool useScaleAnimation = true;
+    [SerializeField] private bool blockGameInput = false;
     [Header("🔊 Audio Options")]
     [SerializeField] private Slider masterVolumeSlider;
     [SerializeField] private Slider musicVolumeSlider;
@@ -673,5 +679,15 @@ public class OptionsMenuPanel BaseUIPanel
         if (backButton != null) backButton.onClick.RemoveAllListeners();
         if (resetToDefaultsButton != null) resetToDefaultsButton.onClick.RemoveAllListeners();
         if (applyButton != null) applyButton.onClick.RemoveAllListeners();
+    }
+
+    void LogDebug(string message)
+    {
+        Debug.Log($"[OptionsMenuPanel] {message}");
+    }
+
+    void LogError(string message)
+    {
+        Debug.LogError($"[OptionsMenuPanel] {message}");
     }
 }

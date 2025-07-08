@@ -60,7 +60,7 @@ namespace UISystem.Configuration
             };
         }
 
-        public T GetConfiguration<T>(string key, ConfigurationProviderType? providerType = null) where T : class
+        public T GetConfiguration<T>(string key, ConfigurationProviderType? providerType = null) where T : ScriptableObject
         {
             var provider = providerType ?? defaultProvider;
 
@@ -82,7 +82,7 @@ namespace UISystem.Configuration
         }
 
         public void SaveConfiguration<T>(string key, T data, ConfigurationProviderType? providerType = null)
-            where T : class
+            where T : ScriptableObject
         {
             var provider = providerType ?? defaultProvider;
             providers[provider].SaveConfiguration(key, data);
