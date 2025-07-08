@@ -1,0 +1,169 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fbf886839a847329ee90792e06f7cd2, type: 3}
+  m_Name: StartMenuUIConfig
+  m_EditorClassIdentifier: 
+  panels:
+  - panelId: MainMenu
+    displayName: Main Menu
+    panelType: 0
+    startHidden: 0
+    showAnimation: 3
+    hideAnimation: 3
+    elements:
+    - elementId: Button_NewGame
+      displayText: New Game
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: NewGame
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Button_LoadGame
+      displayText: Load Game
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: LoadGame
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Button_Options
+      displayText: Options
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: OptionsMain
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Button_Quit
+      displayText: Quit
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: ExitConfirm
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+  - panelId: OptionsMain
+    displayName: Options
+    panelType: 0
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements:
+    - elementId: Button_Audio
+      displayText: Audio
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: AudioOptions
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Button_Graphics
+      displayText: Graphics
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: GraphicsOptions
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Button_Controls
+      displayText: Controls
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: ControlsOptions
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Button_Gameplay
+      displayText: Gameplay
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: GameplayOptions
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+    - elementId: Button_Back
+      displayText: Back
+      elementType: 0
+      bindingPath: 
+      bindingMode: 1
+      actionTarget: MainMenu
+      minValue: 0
+      maxValue: 1
+      wholeNumbers: 0
+      options: []
+      placeholder: 
+  - panelId: AudioOptions
+    displayName: Audio Options
+    panelType: 1
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  - panelId: GraphicsOptions
+    displayName: Graphics Options
+    panelType: 1
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  - panelId: ControlsOptions
+    displayName: Controls Options
+    panelType: 1
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  - panelId: GameplayOptions
+    displayName: Gameplay Options
+    panelType: 1
+    startHidden: 1
+    showAnimation: 3
+    hideAnimation: 3
+    elements: []
+  theme:
+    primaryColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+    secondaryColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+    backgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+    defaultFont: {fileID: 0}
+    defaultFontSize: 14
+  navigation:
+    enableKeyboardNavigation: 1
+    enableGamepadNavigation: 1
+    wrapAround: 1
+    submitKey: 13
+    cancelKey: 27
