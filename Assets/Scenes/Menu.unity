@@ -483,6 +483,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5dedbd2128ee4b740a4b0b55e179f3ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  useAutomaticUI: 1
+  showDebugInfo: 1
   generateOnStart: 1
   destroyExistingUI: 1
   primaryColor: {r: 0.2, g: 0.6, b: 1, a: 1}
@@ -491,9 +493,9 @@ MonoBehaviour:
   backgroundColor: {r: 0.1, g: 0.1, b: 0.15, a: 0.95}
   gameSceneName: Lobby
   mainMenuSceneName: Menu
-  isGenerated: 0
-  totalPanelsCreated: 0
-  totalControlsCreated: 0
+  isGenerated: 1
+  totalPanelsCreated: 14
+  totalControlsCreated: 39
 --- !u!1 &1028735992
 GameObject:
   m_ObjectHideFlags: 0

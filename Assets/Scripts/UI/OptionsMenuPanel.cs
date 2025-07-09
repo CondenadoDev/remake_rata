@@ -178,7 +178,7 @@ public class OptionsMenuPanel : UIPanel
             var graphicsConfig = ConfigurationManager.Graphics;
             
             SetDropdownValue(qualityDropdown, (int)graphicsConfig.qualityLevel);
-            SetToggleValue(fullscreenToggle, graphicsConfig.fullScreenMode == FullScreenMode.FullScreenWindow);
+            SetToggleValue(fullscreenToggle, graphicsConfig.fullScreenMode == CustomFullScreenMode.VentanaPantallaCompleta);
             SetToggleValue(vSyncToggle, graphicsConfig.vSyncEnabled);
             
             // Set resolution dropdown to current resolution
@@ -337,7 +337,7 @@ public class OptionsMenuPanel : UIPanel
             if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
             {
                 ConfigurationManager.Graphics.fullScreenMode = isFullscreen ? 
-                    FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+                    CustomFullScreenMode.VentanaMaximizada : CustomFullScreenMode.Ventana;
             }
             
             LogDebug($"Fullscreen changed: {isFullscreen}");
@@ -490,9 +490,9 @@ public class OptionsMenuPanel : UIPanel
             if (UIValidation.ValidateManager(ConfigurationManager.Graphics, "GraphicsConfig"))
             {
                 var config = ConfigurationManager.Graphics;
-                config.qualityLevel = QualityLevel.High;
+                config.qualityLevel = QualityLevel.Alto;
                 config.vSyncEnabled = true;
-                config.fullScreenMode = FullScreenMode.FullScreenWindow;
+                config.fullScreenMode = CustomFullScreenMode.PantallaCompletaExclusiva;
                 config.ValidateValues();
             }
             

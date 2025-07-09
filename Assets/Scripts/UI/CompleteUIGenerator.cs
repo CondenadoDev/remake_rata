@@ -1159,7 +1159,7 @@ void GenerateVideoOptionsPanel()
     CreateDropdown(panel.transform, "Modo de Pantalla:", new Vector2(0, y), fsModes, (int)ConfigurationManager.Graphics.fullScreenMode,
         (int index) =>
         {
-            ConfigurationManager.Graphics.fullScreenMode = (FullScreenMode)index;
+            ConfigurationManager.Graphics.fullScreenMode = (CustomFullScreenMode)index;
             LogDebug($"FullScreen Mode: {fsModes[index]}");
         });
     y -= 40;
@@ -1263,7 +1263,7 @@ void GenerateVideoOptionsPanel()
     CreateDropdown(panel.transform, "Resolución Sombras:", new Vector2(0, y), shadowRes, (int)ConfigurationManager.Graphics.shadowResolution,
         (int value) =>
         {
-            ConfigurationManager.Graphics.shadowResolution = (ShadowResolution)value;
+            ConfigurationManager.Graphics.shadowResolution = (CustomShadowResolution)value;
             LogDebug($"Resolución sombras: {shadowRes[value]}");
         });
     y -= 40;

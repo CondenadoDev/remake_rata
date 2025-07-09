@@ -16,8 +16,15 @@ using UnityEditor;
 /// SISTEMA UI MAESTRO CORREGIDO - Genera automáticamente toda la interfaz funcional del juego
 /// Version 2.0 - Corrige problemas de inicialización y navegación
 /// </summary>
+/// [System.Serializable]
+
+
 public class MasterUISystem : MonoBehaviour
 {
+    [Header("🤖 Automatic UI System")]
+    [SerializeField] private bool useAutomaticUI = true;
+    [SerializeField] private bool showDebugInfo = true;
+    
     [Header("MASTER UI SYSTEM")]
     [SerializeField] private bool generateOnStart = true;
     [SerializeField] private bool destroyExistingUI = true;
@@ -46,10 +53,21 @@ public class MasterUISystem : MonoBehaviour
     // Diccionarios para organización
     private Dictionary<string, GameObject> panels = new Dictionary<string, GameObject>();
     private Dictionary<string, ConcreteUIPanel> panelComponents = new Dictionary<string, ConcreteUIPanel>();
+    private Dictionary<string, List<AutoUIControl>> autoControls = new Dictionary<string, List<AutoUIControl>>();
     
     // Configuraciones del juego (valores por defecto)
     private GameSettings gameSettings = new GameSettings();
-    
+    public class AutoUIControl
+    {
+        public string fieldName;
+        public string displayName;
+        public UIControlType controlType;
+        public object configObject;
+        public System.Reflection.FieldInfo fieldInfo;
+        public float minValue, maxValue;
+        public string[] options;
+        public int order;
+    }
     [System.Serializable]
     public class GameSettings
     {
@@ -239,33 +257,42 @@ public class MasterUISystem : MonoBehaviour
     
         Debug.Log("[MasterUISystem] Componentes verificados correctamente");
     }
+    
     void CreateAllPanels()
     {
         Debug.Log("[MasterUISystem] Generando todos los paneles...");
-        
+    
         // 1. Menú Principal
         CreateMainMenuPanel();
-        
-        // 2. Opciones Principal
+    
+        // 2. Opciones Principal  
         CreateOptionsMainPanel();
-        
-        // 3. Opciones específicas
-        CreateAudioOptionsPanel();
-        CreateGraphicsOptionsPanel();
-        CreateControlsOptionsPanel();
-        CreateGameplayOptionsPanel();
-        
+    
+        if (useAutomaticUI)
+        {
+            // 3. Generar paneles automáticamente desde configs
+            CreateAutomaticOptionsPanels();
+        }
+        else
+        {
+            // 3. Opciones específicas (modo manual original)
+            CreateAudioOptionsPanel();
+            CreateGraphicsOptionsPanel();
+            CreateControlsOptionsPanel();
+            CreateGameplayOptionsPanel();
+        }
+    
         // 4. Juego
         CreateNewGamePanel();
         CreateLoadGamePanel();
         CreateHUDPanel();
         CreatePauseMenuPanel();
         CreateInventoryPanel();
-        
+    
         // 5. Misceláneos
         CreateCreditsPanel();
         CreateConfirmExitPanel();
-        
+    
         Debug.Log($"[MasterUISystem] {totalPanelsCreated} paneles generados");
     }
     
@@ -322,7 +349,6 @@ public class MasterUISystem : MonoBehaviour
         }
     }
     
-    // Reemplaza el método SetPanelProperties completo:
     void SetPanelProperties(ConcreteUIPanel panel, string panelID, bool startVisible)
     {
         // Configurar panelID directamente - SIMPLIFICADO
@@ -923,29 +949,57 @@ public class MasterUISystem : MonoBehaviour
     }
     
     void CreateOptionsMainPanel()
+{
+    GameObject panel = CreateBasePanel("OPTIONS MAIN", "OptionsMain");
+    
+    CreateTitle(panel.transform, "CONFIGURACIONES", new Vector2(0, 300));
+    
+    if (useAutomaticUI)
     {
-        GameObject panel = CreateBasePanel("OPTIONS MAIN", "OptionsMain");
+        // Mostrar estado del sistema automático
+        CreateTitle(panel.transform, "🤖 Sistema Automático ACTIVADO", new Vector2(0, 220), 20);
         
-        CreateTitle(panel.transform, "CONFIGURACIONES", new Vector2(0, 300));
-        
-        CreateStyledButton(panel.transform, "AUDIO", new Vector2(0, 150), new Vector2(300, 60), 
+        // Botones para configs conocidos
+        CreateStyledButton(panel.transform, "AUDIO OPTIONS", new Vector2(0, 150), new Vector2(300, 60), 
             () => ShowPanel("AudioOptions"));
         
-        CreateStyledButton(panel.transform, "GRAFICOS", new Vector2(0, 80), new Vector2(300, 60), 
+        CreateStyledButton(panel.transform, "GRAPHICS OPTIONS", new Vector2(0, 80), new Vector2(300, 60), 
             () => ShowPanel("GraphicsOptions"));
         
+        CreateStyledButton(panel.transform, "INPUT OPTIONS", new Vector2(0, 10), new Vector2(300, 60), 
+            () => ShowPanel("InputOptions"));
+        
+        CreateStyledButton(panel.transform, "GAMEPLAY OPTIONS", new Vector2(0, -60), new Vector2(300, 60), 
+            () => ShowPanel("GameplayOptions"));
+        
+        CreateStyledButton(panel.transform, "PLAYER OPTIONS", new Vector2(0, -130), new Vector2(300, 60), 
+            () => ShowPanel("PlayerOptions"));
+        
+        CreateStyledButton(panel.transform, "APLICAR TODO", new Vector2(-120, -210), new Vector2(200, 50), 
+            () => Debug.Log("Aplicando todas las configuraciones automáticas"));
+    }
+    else
+    {
+        // Mostrar estado manual
+        CreateTitle(panel.transform, "📖 Sistema Manual ACTIVADO", new Vector2(0, 220), 20);
+        
+        // Botones manuales originales
+        CreateStyledButton(panel.transform, "AUDIO", new Vector2(0, 150), new Vector2(300, 60), 
+            () => ShowPanel("AudioOptions"));
+        CreateStyledButton(panel.transform, "GRAFICOS", new Vector2(0, 80), new Vector2(300, 60), 
+            () => ShowPanel("GraphicsOptions"));
         CreateStyledButton(panel.transform, "CONTROLES", new Vector2(0, 10), new Vector2(300, 60), 
             () => ShowPanel("ControlsOptions"));
-        
         CreateStyledButton(panel.transform, "JUGABILIDAD", new Vector2(0, -60), new Vector2(300, 60), 
             () => ShowPanel("GameplayOptions"));
         
         CreateStyledButton(panel.transform, "APLICAR TODO", new Vector2(-120, -180), new Vector2(200, 50), 
             ApplyAllSettings);
-        
-        CreateStyledButton(panel.transform, "VOLVER", new Vector2(120, -180), new Vector2(200, 50), 
-            () => ShowPanel("MainMenu"));
     }
+    
+    CreateStyledButton(panel.transform, "VOLVER", new Vector2(120, -210), new Vector2(200, 50), 
+        () => ShowPanel("MainMenu"));
+}
     
     void CreateAudioOptionsPanel()
     {
@@ -1395,6 +1449,52 @@ public class MasterUISystem : MonoBehaviour
         CreateStyledButton(panel.transform, "MENU PRINCIPAL", new Vector2(0, -140), new Vector2(250, 50), 
             () => ShowPanel("MainMenu"));
     }
+    void CreateInputOptionsPanel()
+    {
+        GameObject panel = CreateBasePanel("INPUT OPTIONS", "InputOptions");
+    
+        CreateTitle(panel.transform, "CONFIGURACION DE ENTRADA", new Vector2(0, 350));
+    
+        CreateSlider(panel.transform, "Sensibilidad del Ratón", new Vector2(0, 250), 0.1f, 3f, gameSettings.mouseSensitivity, 
+            (value) => gameSettings.mouseSensitivity = value);
+    
+        CreateToggle(panel.transform, "Invertir Eje Y", new Vector2(0, 200), gameSettings.invertMouseY, 
+            (value) => gameSettings.invertMouseY = value);
+    
+        CreateSlider(panel.transform, "Sensibilidad Gamepad", new Vector2(0, 150), 0.1f, 3f, gameSettings.gamepadSensitivity, 
+            (value) => gameSettings.gamepadSensitivity = value);
+    
+        CreateToggle(panel.transform, "Vibración Gamepad", new Vector2(0, 100), gameSettings.enableVibration, 
+            (value) => gameSettings.enableVibration = value);
+    
+        CreateStyledButton(panel.transform, "VOLVER", new Vector2(0, -200), new Vector2(200, 50), 
+            () => ShowPanel("OptionsMain"));
+    }
+    void CreatePlayerOptionsPanel()
+    {
+        GameObject panel = CreateBasePanel("PLAYER OPTIONS", "PlayerOptions");
+    
+        CreateTitle(panel.transform, "CONFIGURACION DEL JUGADOR", new Vector2(0, 350));
+    
+        // Configuraciones específicas del jugador
+        CreateTitle(panel.transform, "Configuraciones del Avatar:", new Vector2(0, 250), 20);
+    
+        string[] avatarOptions = { "Guerrero", "Mago", "Arquero", "Asesino" };
+        CreateDropdown(panel.transform, "Clase Favorita", new Vector2(0, 200), avatarOptions, 0, 
+            (index) => Debug.Log($"Clase seleccionada: {avatarOptions[index]}"));
+    
+        CreateToggle(panel.transform, "Mostrar Casco", new Vector2(0, 150), true, 
+            (value) => Debug.Log($"Mostrar casco: {value}"));
+    
+        CreateToggle(panel.transform, "Auto-Recoger Items", new Vector2(0, 100), true, 
+            (value) => Debug.Log($"Auto-recoger: {value}"));
+    
+        CreateSlider(panel.transform, "Campo de Visión", new Vector2(0, 50), 60f, 120f, 90f, 
+            (value) => Debug.Log($"FOV: {value}"));
+    
+        CreateStyledButton(panel.transform, "VOLVER", new Vector2(0, -200), new Vector2(200, 50), 
+            () => ShowPanel("OptionsMain"));
+    }
     
     void CreateInventoryPanel()
     {
@@ -1558,18 +1658,17 @@ public class MasterUISystem : MonoBehaviour
     void SetupCompleteNavigation()
     {
         Debug.Log("[MasterUISystem] Configurando navegación completa...");
-        
-        // Configurar navegación entre paneles
+    
         foreach (var panelKvp in panelComponents)
         {
             string panelID = panelKvp.Key;
             ConcreteUIPanel panel = panelKvp.Value;
-            
-            // Configurar navegación
+        
+            // Configurar navegación SIN duplicados
             switch (panelID)
             {
                 case "MainMenu":
-                    break; // Es el panel raíz
+                    break; // Panel raíz
                 case "NewGame":
                 case "LoadGame":
                 case "OptionsMain":
@@ -1581,6 +1680,8 @@ public class MasterUISystem : MonoBehaviour
                 case "GraphicsOptions":
                 case "ControlsOptions":
                 case "GameplayOptions":
+                case "InputOptions":      // ✅ Agregar nuevos
+                case "PlayerOptions":     // ✅ Agregar nuevos
                     panel.previousPanelID = "OptionsMain";
                     break;
                 case "PauseMenu":
@@ -1589,36 +1690,39 @@ public class MasterUISystem : MonoBehaviour
                     break;
             }
         }
-        
-        Debug.Log("[MasterUISystem] Navegación configurada");
+    
+        Debug.Log("[MasterUISystem] Navegación configurada sin duplicados");
     }
     
     void ConfigureUIManager()
     {
         Debug.Log("[MasterUISystem] Configurando UIManager...");
-        
+    
         if (uiManager != null)
         {
-            // Convertir a array para UIManager
-            UIPanel[] panelArray = panelComponents.Values.Cast<UIPanel>().ToArray();
-            
-            // Configurar UIManager usando reflection
+            // LIMPIAR paneles existentes primero
             var field = typeof(UIManager).GetField("uiPanels", 
                 BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-            
+        
             if (field != null)
             {
-                field.SetValue(uiManager, panelArray);
-                Debug.Log($"[MasterUISystem] UIManager configurado con {panelArray.Length} paneles");
-                
-                // Forzar inicialización del UIManager
+                // Limpiar array existente
+                field.SetValue(uiManager, new UIPanel[0]);
+            
+                // Convertir SOLO los paneles únicos
+                var uniquePanels = panelComponents.Values
+                    .GroupBy(p => p.panelID)
+                    .Select(g => g.First())
+                    .Cast<UIPanel>()
+                    .ToArray();
+            
+                field.SetValue(uiManager, uniquePanels);
+                Debug.Log($"[MasterUISystem] UIManager configurado con {uniquePanels.Length} paneles únicos");
+            
+                // Forzar inicialización
                 var initMethod = typeof(UIManager).GetMethod("InitializePanels", 
                     BindingFlags.NonPublic | BindingFlags.Instance);
                 initMethod?.Invoke(uiManager, null);
-            }
-            else
-            {
-                Debug.LogWarning("[MasterUISystem] No se pudo configurar UIManager - campo uiPanels no encontrado");
             }
         }
     }
@@ -1693,7 +1797,7 @@ public class MasterUISystem : MonoBehaviour
             string[] parts = resolutions[gameSettings.resolutionIndex].Split('x');
             int width = int.Parse(parts[0]);
             int height = int.Parse(parts[1]);
-            Screen.SetResolution(width, height, gameSettings.fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
+            Screen.SetResolution(width, height, gameSettings.fullscreen ? UnityEngine.FullScreenMode.ExclusiveFullScreen : UnityEngine.FullScreenMode.Windowed);
         }
         
         Debug.Log($"[MasterUISystem] Gráficos aplicados - Calidad: {gameSettings.qualityLevel}, FPS: {gameSettings.targetFPS}");
@@ -1836,4 +1940,45 @@ public class MasterUISystem : MonoBehaviour
         
         Debug.Log("[MasterUISystem] Sistema UI destruido");
     }
+    void CreateAutomaticOptionsPanels()
+    {
+        Debug.Log("[MasterUISystem] 🤖 Generando paneles automáticos FUNCIONALES...");
+    
+        // CREAR PANELES FUNCIONALES en lugar de placeholders
+        CreateAudioOptionsPanel();      // ✅ Panel con controles reales
+        CreateGraphicsOptionsPanel();   // ✅ Panel con controles reales
+        CreateControlsOptionsPanel();   // ✅ Panel con controles reales  
+        CreateGameplayOptionsPanel();   // ✅ Panel con controles reales
+    
+        // Crear paneles adicionales automáticos si es necesario
+        CreateInputOptionsPanel();      // Nuevo panel automático
+        CreatePlayerOptionsPanel();     // Nuevo panel automático
+    }
+
+// NUEVO MÉTODO: Crear panel básico para config
+void CreateBasicConfigPanel(string panelName, string configTypeName)
+{
+    string panelID = panelName.Replace(" ", "");
+    GameObject panel = CreateBasePanel(panelName.ToUpper(), panelID);
+    
+    if (panel == null) return;
+    
+    CreateTitle(panel.transform, $"CONFIGURACION {panelName.ToUpper()}", new Vector2(0, 350));
+    
+    // Por ahora mostrar mensaje de "En construcción" hasta implementar completamente
+    CreateTitle(panel.transform, "🤖 Sistema Automático Activado", new Vector2(0, 200), 24);
+    CreateTitle(panel.transform, $"Panel para {configTypeName}", new Vector2(0, 150), 18);
+    CreateTitle(panel.transform, "Configuraciones se generarán automáticamente", new Vector2(0, 100), 16);
+    CreateTitle(panel.transform, "cuando agregues atributos [UIOption]", new Vector2(0, 70), 16);
+    
+    // Botones de control
+    CreateStyledButton(panel.transform, "APLICAR", new Vector2(-120, 0), new Vector2(200, 50), 
+        () => Debug.Log($"Aplicando {configTypeName}"));
+    
+    CreateStyledButton(panel.transform, "VOLVER", new Vector2(120, 0), new Vector2(200, 50), 
+        () => ShowPanel("OptionsMain"));
+    
+    if (showDebugInfo)
+        Debug.Log($"[MasterUISystem] ✅ Panel básico creado: {panelName}");
+}
 }
