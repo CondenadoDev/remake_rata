@@ -117,14 +117,22 @@ public class PlayerStats : MonoBehaviour
         isRegeneratingStamina = false;
     }
     
+
     public bool CanSprint()
     {
         return currentStamina >= config.runStaminaCost * Time.deltaTime;
     }
-    
+    public bool CanStartSprinting()
+    {
+        return currentStamina >= 10f; // Umbral mínimo para empezar a correr
+    }
     public bool CanConsummeStamina(float amount)
     {
-        return currentStamina >= amount;
+        return currentStamina >= amount; // Ya estaba bien
+    }
+    public bool IsStaminaEmpty()
+    {
+        return currentStamina <= 0f;
     }
     
     public void ConsumeStamina(float amount)

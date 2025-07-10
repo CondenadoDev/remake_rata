@@ -1,4 +1,3 @@
-// PlayerStateMachine.cs
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -26,6 +25,10 @@ public class PlayerStateMachine : MonoBehaviour
     private Dictionary<System.Type, PlayerState> states;
     private PlayerState currentState;
     
+    // 🔥 NUEVO: Control de input anti-spam
+    private float lastAttackInputTime = -1f;
+    private const float ATTACK_INPUT_COOLDOWN = 0.1f;
+    
     // Propiedades públicas
     public CharacterController Controller => controller;
     public Animator Animator => animator;
@@ -39,6 +42,9 @@ public class PlayerStateMachine : MonoBehaviour
     // Estado actual
     public PlayerState CurrentState => currentState;
     public System.Type CurrentStateType => currentState?.GetType();
+    
+    // 🔥 NUEVO: Estados que bloquean input/movimiento
+    public bool IsInActionState => currentState is DodgingPlayerState || currentState is AttackingPlayerState;
     
     // Eventos
     public static event System.Action<PlayerState, PlayerState> OnStateChanged;
@@ -171,7 +177,7 @@ public class PlayerStateMachine : MonoBehaviour
 
     #region Input Handlers
     
-    void HandleMoveInput(Vector2 input)
+    void HandleMoveInput(UnityEngine.Vector2 input)
     {
         movement.SetMoveInput(input);
         currentState?.OnMoveInput(input);
@@ -185,6 +191,13 @@ public class PlayerStateMachine : MonoBehaviour
     
     void HandleAttackInput()
     {
+        // 🔥 CORREGIDO: Anti-spam de ataques
+        if (Time.time - lastAttackInputTime < ATTACK_INPUT_COOLDOWN)
+        {
+            return; // Ignorar clicks muy rápidos
+        }
+        
+        lastAttackInputTime = Time.time;
         currentState?.OnAttackInput();
     }
     
@@ -206,8 +219,12 @@ public class PlayerStateMachine : MonoBehaviour
     {
         currentState?.Update();
         
-        // Actualizar sistemas
-        movement?.UpdateMovement();
+        // 🔥 CORREGIDO: Solo actualizar movimiento si NO estamos en estados de acción
+        if (!IsInActionState)
+        {
+            movement?.UpdateMovement();
+        }
+        
         stats?.UpdateStats();
     }
     
@@ -241,349 +258,4 @@ public class PlayerStateMachine : MonoBehaviour
     }
     
     #endregion
-}
-
-// =====================================================================
-// PlayerState.cs - Clase base para estados del jugador
-// =====================================================================
-
-public abstract class PlayerState
-{
-    protected PlayerStateMachine player;
-    protected PlayerConfig config;
-    protected CharacterController controller;
-    protected Animator animator;
-    protected PlayerMovement movement;
-    protected PlayerCombat combat;
-    protected PlayerStats stats;
-    
-    public virtual void Initialize(PlayerStateMachine playerStateMachine)
-    {
-        player = playerStateMachine;
-        config = playerStateMachine.Config;
-        controller = playerStateMachine.Controller;
-        animator = playerStateMachine.Animator;
-        movement = playerStateMachine.Movement;
-        combat = playerStateMachine.Combat;
-        stats = playerStateMachine.Stats;
-    }
-    
-    public virtual bool CanEnter() { return true; }
-    public virtual void Enter() { }
-    public virtual void Update() { }
-    public virtual void FixedUpdate() { }
-    public virtual void Exit() { }
-    
-    // Input handlers
-    public virtual void OnMoveInput(Vector2 input) { }
-    public virtual void OnSprintInput(bool isPressed) { }
-    public virtual void OnAttackInput() { }
-    public virtual void OnDodgeInput() { }
-    public virtual void OnInteractInput() { }
-    
-    // Collision handlers
-    public virtual void OnTriggerEnter(Collider other) { }
-    public virtual void OnTriggerExit(Collider other) { }
-}
-
-// =====================================================================
-// Estados específicos del jugador
-// =====================================================================
-
-public class IdlePlayerState : PlayerState
-{
-    public override void Enter()
-    {
-        animator.SetFloat("MoveSpeed", 0f);
-        movement.SetVelocity(Vector3.zero);
-    }
-    
-    public override void OnMoveInput(Vector2 input)
-    {
-        if (input.magnitude > 0.1f)
-        {
-            player.ChangeState<MovingPlayerState>();
-        }
-    }
-    
-    public override void OnAttackInput()
-    {
-        if (combat.CanAttack())
-        {
-            player.ChangeState<AttackingPlayerState>();
-        }
-    }
-    
-    public override void OnDodgeInput()
-    {
-        if (combat.CanDodge())
-        {
-            player.ChangeState<DodgingPlayerState>();
-        }
-    }
-}
-
-public class MovingPlayerState : PlayerState
-{
-    public override void Enter()
-    {
-        animator.SetFloat("MoveSpeed", 0.5f);
-    }
-    
-    public override void Update()
-    {
-        if (movement.GetMoveInput().magnitude < 0.1f)
-        {
-            player.ChangeState<IdlePlayerState>();
-        }
-        else if (movement.IsSprinting && stats.CanSprint())
-        {
-            player.ChangeState<RunningPlayerState>();
-        }
-    }
-    
-    public override void OnAttackInput()
-    {
-        if (combat.CanAttack())
-        {
-            player.ChangeState<AttackingPlayerState>();
-        }
-    }
-    
-    public override void OnDodgeInput()
-    {
-        if (combat.CanDodge())
-        {
-            player.ChangeState<DodgingPlayerState>();
-        }
-    }
-}
-
-public class RunningPlayerState : PlayerState
-{
-    public override void Enter()
-    {
-        animator.SetFloat("MoveSpeed", 1f);
-    }
-    
-    public override void Update()
-    {
-        if (movement.GetMoveInput().magnitude < 0.1f)
-        {
-            player.ChangeState<IdlePlayerState>();
-        }
-        else if (!movement.IsSprinting || !stats.CanSprint())
-        {
-            player.ChangeState<MovingPlayerState>();
-        }
-        
-        // Consumir stamina
-        stats.ConsumeStamina(config.runStaminaCost * Time.deltaTime);
-    }
-    
-    public override void OnAttackInput()
-    {
-        if (combat.CanAttack())
-        {
-            player.ChangeState<AttackingPlayerState>();
-        }
-    }
-    
-    public override void OnDodgeInput()
-    {
-        if (combat.CanDodge())
-        {
-            player.ChangeState<DodgingPlayerState>();
-        }
-    }
-}
-
-public class DodgingPlayerState : PlayerState
-{
-    private float dodgeTimer;
-    private Vector3 dodgeDirection;
-    
-    public override bool CanEnter()
-    {
-        return combat.CanDodge() && stats.CanConsummeStamina(config.dodgeStaminaCost);
-    }
-    
-    public override void Enter()
-    {
-        dodgeTimer = 0f;
-        dodgeDirection = movement.GetLastMoveDirection();
-        
-        if (dodgeDirection == Vector3.zero)
-            dodgeDirection = player.transform.forward;
-        
-        // Consumir stamina
-        stats.ConsumeStamina(config.dodgeStaminaCost);
-        
-        // Activar invulnerabilidad
-        combat.SetInvulnerable(true, config.invulnerabilityDuration);
-        
-        // Animación
-        animator.SetTrigger("Dodge");
-        
-        // Efectos
-        InputHelper.TriggerHapticFeedback(0.3f, 0.1f);
-    }
-    
-    public override void Update()
-    {
-        dodgeTimer += Time.deltaTime;
-        
-        // Movimiento de dodge
-        float dodgeProgress = dodgeTimer / config.dodgeDuration;
-        float speedMultiplier = Mathf.Lerp(1f, 0f, dodgeProgress);
-        
-        Vector3 dodgeVelocity = dodgeDirection * config.dodgeSpeed * speedMultiplier;
-        movement.SetVelocity(dodgeVelocity);
-        
-        // Terminar dodge
-        if (dodgeTimer >= config.dodgeDuration)
-        {
-            // Volver al estado apropiado
-            if (movement.GetMoveInput().magnitude > 0.1f)
-            {
-                if (movement.IsSprinting && stats.CanSprint())
-                    player.ChangeState<RunningPlayerState>();
-                else
-                    player.ChangeState<MovingPlayerState>();
-            }
-            else
-            {
-                player.ChangeState<IdlePlayerState>();
-            }
-        }
-    }
-    
-    public override void Exit()
-    {
-        movement.SetVelocity(Vector3.zero);
-    }
-}
-
-public class AttackingPlayerState : PlayerState
-{
-    private float attackTimer;
-    
-    public override bool CanEnter()
-    {
-        return combat.CanAttack() && stats.CanConsummeStamina(config.attackStaminaCost);
-    }
-    
-    public override void Enter()
-    {
-        attackTimer = 0f;
-        
-        // Consumir stamina
-        stats.ConsumeStamina(config.attackStaminaCost);
-        
-        // Ejecutar ataque
-        combat.PerformAttack();
-        
-        // Parar movimiento
-        movement.SetVelocity(Vector3.zero);
-        
-        // Animación
-        animator.SetTrigger("Attack");
-        
-        // Efectos
-        InputHelper.TriggerHapticFeedback(0.5f, 0.2f);
-    }
-    
-    public override void Update()
-    {
-        attackTimer += Time.deltaTime;
-        
-        if (attackTimer >= config.attackCooldown)
-        {
-            // Volver al estado apropiado
-            if (movement.GetMoveInput().magnitude > 0.1f)
-            {
-                if (movement.IsSprinting && stats.CanSprint())
-                    player.ChangeState<RunningPlayerState>();
-                else
-                    player.ChangeState<MovingPlayerState>();
-            }
-            else
-            {
-                player.ChangeState<IdlePlayerState>();
-            }
-        }
-    }
-    
-    public override void OnAttackInput()
-    {
-        // Combo system - podrías expandir esto
-        if (attackTimer > config.attackCooldown * 0.5f && combat.CanCombo())
-        {
-            attackTimer = 0f;
-            combat.PerformCombo();
-            animator.SetTrigger("Attack");
-        }
-    }
-}
-
-public class StunnedPlayerState : PlayerState
-{
-    private float stunTimer;
-    private float stunDuration;
-    
-    public void StartStun(float duration)
-    {
-        stunDuration = duration;
-    }
-    
-    public override void Enter()
-    {
-        stunTimer = 0f;
-        movement.SetVelocity(Vector3.zero);
-        animator.SetBool("IsStunned", true);
-    }
-    
-    public override void Update()
-    {
-        stunTimer += Time.deltaTime;
-        
-        if (stunTimer >= stunDuration)
-        {
-            player.ChangeState<IdlePlayerState>();
-        }
-    }
-    
-    public override void Exit()
-    {
-        animator.SetBool("IsStunned", false);
-    }
-    
-    // Durante el stun, ignorar la mayoría de inputs
-    public override void OnMoveInput(Vector2 input) { }
-    public override void OnAttackInput() { }
-    public override void OnDodgeInput() { }
-}
-
-public class DeadPlayerState : PlayerState
-{
-    public override bool CanEnter()
-    {
-        return stats.CurrentHealth <= 0;
-    }
-    
-    public override void Enter()
-    {
-        movement.SetVelocity(Vector3.zero);
-        animator.SetBool("IsDead", true);
-        
-        // Notificar muerte
-        GameEvents.TriggerPlayerDied();
-    }
-    
-    // Durante la muerte, no procesar inputs
-    public override void OnMoveInput(Vector2 input) { }
-    public override void OnSprintInput(bool isPressed) { }
-    public override void OnAttackInput() { }
-    public override void OnDodgeInput() { }
-    public override void OnInteractInput() { }
 }
