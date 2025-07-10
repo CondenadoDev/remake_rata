@@ -31,11 +31,6 @@ public class SetupManagerEditor : Editor
             setupManager.SetupUIOnly();
         }
         
-        if (GUILayout.Button("🔄 Migrate Components"))
-        {
-            setupManager.MigrateComponentsOnly();
-        }
-        
         if (GUILayout.Button("⚙️ Create Configurations"))
         {
             setupManager.CreateConfigurationsOnly();

@@ -14,7 +14,7 @@ public class SetupManager : MonoBehaviour
     [SerializeField] private bool createUICanvasIfMissing = true;
     [SerializeField] private bool setupEventSystemIfMissing = true;
     [SerializeField] private bool createCoreManagers = true;
-    [SerializeField] private bool migrateExistingComponents = true;
+    [SerializeField] private bool setupPlayerSystemIfMissing = true; // ✅ NUEVO
     
     [Header("🎮 Manager Prefabs (Optional)")]
     [SerializeField] private GameObject gameManagerPrefab;
@@ -22,6 +22,7 @@ public class SetupManager : MonoBehaviour
     [SerializeField] private GameObject audioManagerPrefab;
     [SerializeField] private GameObject inputManagerPrefab;
     [SerializeField] private GameObject saveSystemPrefab;
+    [SerializeField] private GameObject playerPrefab; // ✅ NUEVO
     
     [Header("📋 Status")]
     [SerializeField] private bool isSetupComplete = false;
@@ -55,8 +56,8 @@ public class SetupManager : MonoBehaviour
             
         yield return new WaitForSeconds(0.1f);
         
-        if (migrateExistingComponents)
-            MigrateExistingComponents();
+        if (setupPlayerSystemIfMissing) // ✅ NUEVO
+            SetupPlayerSystem();
             
         yield return new WaitForSeconds(0.1f);
         
@@ -154,6 +155,102 @@ public class SetupManager : MonoBehaviour
         }
     }
     
+    // ✅ NUEVO MÉTODO - Reemplaza MigrateExistingComponents
+    void SetupPlayerSystem()
+    {
+        Debug.Log("🎮 Setting up player system...");
+        
+        // Buscar PlayerStateMachine existente
+        PlayerStateMachine existingPlayer = FindFirstObjectByType<PlayerStateMachine>();
+        
+        if (existingPlayer == null)
+        {
+            // No hay player, crear uno nuevo
+            if (playerPrefab != null)
+            {
+                GameObject newPlayer = Instantiate(playerPrefab);
+                Debug.Log("✅ Player created from prefab");
+            }
+            else
+            {
+                // Crear player básico
+                CreateBasicPlayer();
+            }
+        }
+        else
+        {
+            // Player existe, verificar que tenga todos los componentes
+            ValidatePlayerComponents(existingPlayer.gameObject);
+        }
+    }
+    
+    void CreateBasicPlayer()
+    {
+        Debug.Log("🎮 Creating basic player setup...");
+        
+        GameObject playerObj = new GameObject("Player");
+        
+        // Componentes esenciales
+        CharacterController controller = playerObj.AddComponent<CharacterController>();
+        controller.height = 2f;
+        controller.radius = 0.5f;
+        controller.center = new Vector3(0, 1, 0);
+        
+        // Animator (opcional)
+        Animator animator = playerObj.AddComponent<Animator>();
+        
+        // Sistema de salud
+        HealthSystem healthSystem = playerObj.AddComponent<HealthSystem>();
+        healthSystem.maxHealth = 100f;
+        
+        // Sistema principal del jugador
+        PlayerStateMachine playerStateMachine = playerObj.AddComponent<PlayerStateMachine>();
+        
+        // Sistemas complementarios se agregan automáticamente en PlayerStateMachine
+        
+        // Configurar posición inicial
+        playerObj.transform.position = new Vector3(0, 1, 0);
+        
+        // Tag y layer
+        playerObj.tag = "Player";
+        playerObj.layer = LayerMask.NameToLayer("Default");
+        
+        Debug.Log("✅ Basic player created with full system");
+    }
+    
+    void ValidatePlayerComponents(GameObject playerObj)
+    {
+        Debug.Log("🔍 Validating player components...");
+        
+        // Verificar componentes esenciales
+        if (playerObj.GetComponent<CharacterController>() == null)
+        {
+            CharacterController controller = playerObj.AddComponent<CharacterController>();
+            controller.height = 2f;
+            controller.radius = 0.5f;
+            controller.center = new Vector3(0, 1, 0);
+            Debug.Log("✅ CharacterController added to player");
+        }
+        
+        if (playerObj.GetComponent<Animator>() == null)
+        {
+            playerObj.AddComponent<Animator>();
+            Debug.Log("✅ Animator added to player");
+        }
+        
+        if (playerObj.GetComponent<HealthSystem>() == null)
+        {
+            HealthSystem healthSystem = playerObj.AddComponent<HealthSystem>();
+            healthSystem.maxHealth = 100f;
+            Debug.Log("✅ HealthSystem added to player");
+        }
+        
+        // PlayerMovement, PlayerCombat, PlayerStats se agregan automáticamente
+        // en PlayerStateMachine.Awake() si no existen
+        
+        Debug.Log("✅ Player components validated");
+    }
+    
     void SetupUICanvas()
     {
         Canvas existingCanvas = FindFirstObjectByType<Canvas>();
@@ -205,53 +302,6 @@ public class SetupManager : MonoBehaviour
         else
         {
             Debug.Log("🎯 EventSystem already exists, skipping creation");
-        }
-    }
-    
-    void MigrateExistingComponents()
-    {
-        Debug.Log("🔄 Migrating existing components...");
-        
-        // Migrar PlayerController existente
-        PlayerController oldPlayerController = FindFirstObjectByType<PlayerController>();
-        if (oldPlayerController != null)
-        {
-            GameObject playerObj = oldPlayerController.gameObject;
-            
-            // Verificar si ya tiene PlayerStateMachine
-            if (playerObj.GetComponent<PlayerStateMachine>() == null)
-            {
-                Debug.Log("🔄 Migrating PlayerController to PlayerStateMachine...");
-                
-                // Copiar configuración básica
-                PlayerStateMachine newPlayerController = playerObj.AddComponent<PlayerStateMachine>();
-                
-                // Copiar referencias de cámara si existen
-                if (oldPlayerController.cameraTransform != null)
-                {
-                    // newPlayerController.cameraTransform = oldPlayerController.cameraTransform;
-                }
-                
-                // Deshabilitar el viejo (no eliminar para preservar referencias)
-                oldPlayerController.enabled = false;
-                
-                Debug.Log("✅ PlayerController migrated to PlayerStateMachine");
-            }
-        }
-        
-        // Migrar HealthSystem existente (ya es compatible)
-        HealthSystem[] healthSystems = FindObjectsByType<HealthSystem>(FindObjectsSortMode.None);
-        foreach (HealthSystem healthSystem in healthSystems)
-        {
-            // HealthSystem ya es compatible, solo verificar configuración
-            Debug.Log($"✅ HealthSystem on {healthSystem.name} is compatible");
-        }
-        
-        // Buscar y configurar sistemas de UI existentes
-        PlayerHealthUI existingHealthUI = FindFirstObjectByType<PlayerHealthUI>();
-        if (existingHealthUI != null)
-        {
-            Debug.Log("✅ Existing PlayerHealthUI found and is compatible");
         }
     }
     
@@ -326,11 +376,29 @@ public class SetupManager : MonoBehaviour
         rect.offsetMax = Vector2.zero;
         
         CanvasGroup canvasGroup = hudPanel.AddComponent<CanvasGroup>();
-        HUDPanel hudComponent = hudPanel.AddComponent<HUDPanel>();
+        
+        // ✅ Usar ConcreteUIPanel en lugar de HUDPanel específico
+        ConcreteUIPanel hudComponent = hudPanel.AddComponent<ConcreteUIPanel>();
+        hudComponent.panelID = "HUD";
+        hudComponent.startVisible = true;
+        hudComponent.useScaleAnimation = false;
+        hudComponent.blockGameInput = false;
         
         // Crear elementos básicos del HUD
         CreateHealthBar(hudPanel.transform);
         CreateStaminaBar(hudPanel.transform);
+        
+        // Agregar conector para PlayerStats
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player != null)
+        {
+            PlayerStatsUIConnector connector = player.GetComponent<PlayerStatsUIConnector>();
+            if (connector == null)
+            {
+                player.AddComponent<PlayerStatsUIConnector>();
+                Debug.Log("✅ PlayerStatsUIConnector added to player");
+            }
+        }
     }
     
     void CreateHealthBar(Transform parent)
@@ -432,7 +500,13 @@ public class SetupManager : MonoBehaviour
         rect.offsetMax = Vector2.zero;
         
         CanvasGroup canvasGroup = pausePanel.AddComponent<CanvasGroup>();
-        PauseMenuPanel pauseComponent = pausePanel.AddComponent<PauseMenuPanel>();
+        
+        // ✅ Usar ConcreteUIPanel en lugar de PauseMenuPanel específico
+        ConcreteUIPanel pauseComponent = pausePanel.AddComponent<ConcreteUIPanel>();
+        pauseComponent.panelID = "PauseMenu";
+        pauseComponent.startVisible = false;
+        pauseComponent.useScaleAnimation = true;
+        pauseComponent.blockGameInput = true;
         
         // Fondo semi-transparente
         Image backgroundImage = pausePanel.AddComponent<Image>();
@@ -452,7 +526,13 @@ public class SetupManager : MonoBehaviour
         rect.offsetMax = Vector2.zero;
         
         CanvasGroup canvasGroup = optionsPanel.AddComponent<CanvasGroup>();
-        OptionsMenuPanel optionsComponent = optionsPanel.AddComponent<OptionsMenuPanel>();
+        
+        // ✅ Usar ConcreteUIPanel en lugar de OptionsMenuPanel específico
+        ConcreteUIPanel optionsComponent = optionsPanel.AddComponent<ConcreteUIPanel>();
+        optionsComponent.panelID = "OptionsMenu";
+        optionsComponent.startVisible = false;
+        optionsComponent.useScaleAnimation = true;
+        optionsComponent.blockGameInput = true;
         
         // Fondo semi-transparente
         Image backgroundImage = optionsPanel.AddComponent<Image>();
@@ -479,10 +559,10 @@ public class SetupManager : MonoBehaviour
         SetupEventSystem();
     }
     
-    [ContextMenu("🔄 Migrate Components Only")]
-    public void MigrateComponentsOnly()
+    [ContextMenu("🎮 Setup Player System Only")]
+    public void SetupPlayerSystemOnly()
     {
-        MigrateExistingComponents();
+        SetupPlayerSystem();
     }
     
     [ContextMenu("⚙️ Create Configurations Only")]

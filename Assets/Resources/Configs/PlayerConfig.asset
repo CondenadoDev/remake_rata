@@ -12,10 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 495604b3df074f99a4596fc8b554e3ff, type: 3}
   m_Name: PlayerConfig
   m_EditorClassIdentifier: 
-  description: 
-  enableDebugLogs: 0
+  debugLogging: 0
   walkSpeed: 2
-  runSpeed: 5
+  runSpeed: 10
   rotationSpeed: 10
   acceleration: 15
   deceleration: 20
@@ -33,7 +32,7 @@ MonoBehaviour:
   maxStamina: 100
   staminaRegenRate: 20
   staminaRegenDelay: 1
-  runStaminaCost: 15
+  runStaminaCost: 5
   dodgeStaminaCost: 25
   attackStaminaCost: 10
   lockOnRange: 15
