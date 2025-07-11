@@ -16,6 +16,9 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 lastMoveDirection;
     private float currentSpeed;
     
+    // 🔥 NUEVO: Control de desaceleración
+    private bool forceStop = false;
+    
     // Properties
     public Vector2 GetMoveInput() => moveInput;
     public bool IsSprinting => isSprinting;
@@ -36,6 +39,7 @@ public class PlayerMovement : MonoBehaviour
     public void SetMoveInput(Vector2 input)
     {
         moveInput = input;
+        forceStop = false; // Permitir movimiento nuevamente
     }
     
     public void SetSprinting(bool sprinting)
@@ -48,8 +52,42 @@ public class PlayerMovement : MonoBehaviour
         velocity = newVelocity;
     }
     
+    // 🔥 NUEVO: Método para parar completamente el movimiento
+    public void StopMovement()
+    {
+        velocity = Vector3.zero;
+        currentSpeed = 0f;
+        forceStop = true;
+        
+        // Aplicar inmediatamente
+        if (controller != null)
+        {
+            // Solo aplicar gravedad
+            Vector3 gravityVelocity = new Vector3(0, velocity.y, 0);
+            if (!controller.isGrounded)
+            {
+                gravityVelocity.y += Physics.gravity.y * Time.deltaTime;
+            }
+            else
+            {
+                gravityVelocity.y = -2f;
+            }
+            
+            controller.Move(gravityVelocity * Time.deltaTime);
+        }
+    }
+    
     public void UpdateMovement()
     {
+        // 🔥 CORREGIDO: Si está forzado a parar, no procesar movimiento
+        if (forceStop)
+        {
+            // Solo aplicar gravedad
+            ApplyGravity();
+            controller.Move(new Vector3(0, velocity.y, 0) * Time.deltaTime);
+            return;
+        }
+        
         // Calcular dirección de movimiento basada en cámara
         Vector3 moveDirection = CalculateMoveDirection();
         
@@ -57,11 +95,14 @@ public class PlayerMovement : MonoBehaviour
         float targetSpeed = isSprinting ? config.runSpeed : config.walkSpeed;
         currentSpeed = moveInput.magnitude * targetSpeed;
         
-        // Aplicar aceleración/desaceleración
+        // 🔥 CORREGIDO: Aplicar aceleración/desaceleración mejorada
         if (moveDirection.magnitude > 0.1f)
         {
-            velocity = Vector3.MoveTowards(velocity, moveDirection * currentSpeed, 
+            // Acelerar hacia la velocidad objetivo
+            Vector3 targetVelocity = moveDirection * currentSpeed;
+            velocity = Vector3.MoveTowards(velocity, targetVelocity, 
                 config.acceleration * Time.deltaTime);
+            
             lastMoveDirection = moveDirection.normalized;
             
             // Rotación hacia la dirección de movimiento
@@ -69,11 +110,24 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            velocity = Vector3.MoveTowards(velocity, Vector3.zero, 
-                config.deceleration * Time.deltaTime);
+            // 🔥 CORREGIDO: Desaceleración más agresiva
+            Vector3 horizontalVelocity = new Vector3(velocity.x, 0, velocity.z);
+            horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, Vector3.zero, 
+                config.deceleration * 2f * Time.deltaTime); // Doble velocidad de desaceleración
+            
+            velocity = new Vector3(horizontalVelocity.x, velocity.y, horizontalVelocity.z);
+            currentSpeed = horizontalVelocity.magnitude;
         }
         
         // Aplicar gravedad
+        ApplyGravity();
+        
+        // Mover el personaje
+        controller.Move(velocity * Time.deltaTime);
+    }
+    
+    void ApplyGravity()
+    {
         if (!controller.isGrounded)
         {
             velocity.y += Physics.gravity.y * Time.deltaTime;
@@ -82,9 +136,6 @@ public class PlayerMovement : MonoBehaviour
         {
             velocity.y = -2f; // Pequeña fuerza para mantener en el suelo
         }
-        
-        // Mover el personaje
-        controller.Move(velocity * Time.deltaTime);
     }
     
     Vector3 CalculateMoveDirection()
@@ -107,7 +158,7 @@ public class PlayerMovement : MonoBehaviour
     
     void RotateTowardsMovement(Vector3 direction)
     {
-        if (direction.magnitude > 0.1f)
+        if (direction.magnitude > 0.1f && !forceStop)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 

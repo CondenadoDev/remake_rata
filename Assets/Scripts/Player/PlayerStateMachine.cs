@@ -25,9 +25,11 @@ public class PlayerStateMachine : MonoBehaviour
     private Dictionary<System.Type, PlayerState> states;
     private PlayerState currentState;
     
-    // 🔥 NUEVO: Control de input anti-spam
+    // 🔥 CORREGIDO: Control de input anti-spam mejorado
     private float lastAttackInputTime = -1f;
-    private const float ATTACK_INPUT_COOLDOWN = 0.1f;
+    private float lastDodgeInputTime = -1f;
+    private const float ATTACK_INPUT_COOLDOWN = 0.2f; // Aumentado para evitar spam
+    private const float DODGE_INPUT_COOLDOWN = 0.1f;
     
     // Propiedades públicas
     public CharacterController Controller => controller;
@@ -43,8 +45,9 @@ public class PlayerStateMachine : MonoBehaviour
     public PlayerState CurrentState => currentState;
     public System.Type CurrentStateType => currentState?.GetType();
     
-    // 🔥 NUEVO: Estados que bloquean input/movimiento
-    public bool IsInActionState => currentState is DodgingPlayerState || currentState is AttackingPlayerState;
+    // 🔥 CORREGIDO: Estados que bloquean input/movimiento
+    public bool IsInActionState => currentState is DodgingPlayerState || currentState is AttackingPlayerState || currentState is StunnedPlayerState;
+    public bool CanReceiveInput => !IsInActionState && currentState is not DeadPlayerState;
     
     // Eventos
     public static event System.Action<PlayerState, PlayerState> OnStateChanged;
@@ -142,6 +145,13 @@ public class PlayerStateMachine : MonoBehaviour
     {
         if (currentState == newState) return;
         
+        // 🔥 NUEVO: Verificar si puede entrar al estado
+        if (!newState.CanEnter())
+        {
+            Debug.LogWarning($"⚠️ Cannot enter state {newState.GetType().Name}");
+            return;
+        }
+        
         PlayerState previousState = currentState;
         
         // Salir del estado actual
@@ -156,7 +166,7 @@ public class PlayerStateMachine : MonoBehaviour
         // Disparar evento
         OnStateChanged?.Invoke(previousState, currentState);
         
-        Debug.Log($"🔄 State: {previousState?.GetType().Name} → {currentState?.GetType().Name}");
+        Debug.Log($"🔄 State: {previousState?.GetType().Name ?? "NULL"} → {currentState?.GetType().Name}");
     }
     
     public bool CanChangeToState<T>() where T : PlayerState
@@ -179,22 +189,35 @@ public class PlayerStateMachine : MonoBehaviour
     
     void HandleMoveInput(UnityEngine.Vector2 input)
     {
+        // 🔥 CORREGIDO: Solo procesar input de movimiento si puede recibirlo
+        if (!CanReceiveInput && IsInActionState)
+        {
+            return;
+        }
+        
         movement.SetMoveInput(input);
         currentState?.OnMoveInput(input);
     }
     
     void HandleSprintInput(bool isPressed)
     {
+        // 🔥 CORREGIDO: Solo procesar sprint si puede recibirlo
+        if (!CanReceiveInput)
+        {
+            return;
+        }
+        
         movement.SetSprinting(isPressed);
         currentState?.OnSprintInput(isPressed);
     }
     
     void HandleAttackInput()
     {
-        // 🔥 CORREGIDO: Anti-spam de ataques
-        if (Time.time - lastAttackInputTime < ATTACK_INPUT_COOLDOWN)
+        // 🔥 CORREGIDO: Mejor anti-spam de ataques
+        if (!CanReceiveInput || Time.time - lastAttackInputTime < ATTACK_INPUT_COOLDOWN)
         {
-            return; // Ignorar clicks muy rápidos
+            Debug.Log("⚠️ Attack input blocked (cooldown or invalid state)");
+            return;
         }
         
         lastAttackInputTime = Time.time;
@@ -203,11 +226,24 @@ public class PlayerStateMachine : MonoBehaviour
     
     void HandleDodgeInput()
     {
+        // 🔥 CORREGIDO: Anti-spam para dodge también
+        if (!CanReceiveInput || Time.time - lastDodgeInputTime < DODGE_INPUT_COOLDOWN)
+        {
+            Debug.Log("⚠️ Dodge input blocked (cooldown or invalid state)");
+            return;
+        }
+        
+        lastDodgeInputTime = Time.time;
         currentState?.OnDodgeInput();
     }
     
     void HandleInteractInput()
     {
+        if (!CanReceiveInput)
+        {
+            return;
+        }
+        
         currentState?.OnInteractInput();
     }
     
@@ -217,12 +253,24 @@ public class PlayerStateMachine : MonoBehaviour
     
     void Update()
     {
+        // 🔥 CORREGIDO: Verificar si el jugador está muerto
+        if (stats.CurrentHealth <= 0 && !IsInState<DeadPlayerState>())
+        {
+            ChangeState<DeadPlayerState>();
+            return;
+        }
+        
         currentState?.Update();
         
-        // 🔥 CORREGIDO: Solo actualizar movimiento si NO estamos en estados de acción
-        if (!IsInActionState)
+        // 🔥 CORREGIDO: Control de movimiento más granular
+        if (CanReceiveInput && !IsInActionState)
         {
             movement?.UpdateMovement();
+        }
+        else if (IsInActionState)
+        {
+            // Durante acciones, asegurar que el movimiento esté parado
+            movement?.StopMovement();
         }
         
         stats?.UpdateStats();
@@ -235,16 +283,56 @@ public class PlayerStateMachine : MonoBehaviour
     
     #endregion
 
+    #region Utility Methods
+    
+    // 🔥 NUEVO: Método para forzar parada inmediata
+    public void ForceStop()
+    {
+        movement?.StopMovement();
+        
+        // Resetear parámetros de animación
+        if (animator != null)
+        {
+            animator.SetFloat("MoveX", 0f);
+            animator.SetFloat("MoveY", 0f);
+            animator.SetFloat("MoveSpeed", 0f);
+            animator.SetBool("IsMoving", false);
+            animator.SetBool("IsRunning", false);
+        }
+    }
+    
+    // 🔥 NUEVO: Método para obtener información de estado
+    public string GetStateInfo()
+    {
+        return $"Current State: {currentState?.GetType().Name ?? "NULL"}\n" +
+               $"Can Receive Input: {CanReceiveInput}\n" +
+               $"Is In Action: {IsInActionState}\n" +
+               $"Health: {stats.CurrentHealth:F1}/{stats.MaxHealth}\n" +
+               $"Stamina: {stats.CurrentStamina:F1}/{stats.MaxStamina}";
+    }
+    
+    // 🔥 NUEVO: Método para debug
+    [ContextMenu("Debug State Info")]
+    void DebugStateInfo()
+    {
+        Debug.Log(GetStateInfo());
+    }
+    
+    #endregion
+
     #region Unity Events
     
     void OnDestroy()
     {
-        // Desuscribirse de eventos
-        InputManager.OnMoveInput -= HandleMoveInput;
-        InputManager.OnSprintInput -= HandleSprintInput;
-        InputManager.OnAttackInput -= HandleAttackInput;
-        InputManager.OnDodgeInput -= HandleDodgeInput;
-        InputManager.OnInteractInput -= HandleInteractInput;
+        // 🔥 CORREGIDO: Verificar que InputManager existe antes de desuscribirse
+        if (InputManager.Instance != null)
+        {
+            InputManager.OnMoveInput -= HandleMoveInput;
+            InputManager.OnSprintInput -= HandleSprintInput;
+            InputManager.OnAttackInput -= HandleAttackInput;
+            InputManager.OnDodgeInput -= HandleDodgeInput;
+            InputManager.OnInteractInput -= HandleInteractInput;
+        }
     }
     
     void OnTriggerEnter(Collider other)
@@ -255,6 +343,23 @@ public class PlayerStateMachine : MonoBehaviour
     void OnTriggerExit(Collider other)
     {
         currentState?.OnTriggerExit(other);
+    }
+    
+    #endregion
+
+    #region Debug Visualization
+    
+    void OnDrawGizmosSelected()
+    {
+        // Mostrar información del estado actual
+        if (currentState != null)
+        {
+            Gizmos.color = Color.cyan;
+            Vector3 textPos = transform.position + Vector3.up * 3f;
+            
+            // Nota: En una implementación real, usarías un sistema de UI para mostrar esto
+            // Aquí solo mostramos en la consola cuando se selecciona
+        }
     }
     
     #endregion

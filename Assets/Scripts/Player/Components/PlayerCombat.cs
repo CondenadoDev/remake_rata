@@ -5,6 +5,7 @@ public class PlayerCombat : MonoBehaviour
 {
     [Header("🗡️ Combat")]
     [SerializeField] private Transform attackPoint;
+
     [SerializeField] private LayerMask enemyLayers;
     [SerializeField] private float attackRange = 1.5f;
     
@@ -35,6 +36,7 @@ public class PlayerCombat : MonoBehaviour
             attackPointObj.transform.localPosition = Vector3.forward;
             attackPoint = attackPointObj.transform;
         }
+        enemyLayers = LayerMask.GetMask("Enemy");
     }
     
     public bool CanAttack()

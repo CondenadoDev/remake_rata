@@ -47,10 +47,27 @@ public class IdlePlayerState : PlayerState
 {
     public override void Enter()
     {
+        // 🔥 CORREGIDO: Resetear TODOS los parámetros del animator
         animator.SetFloat("MoveX", 0f, 0.1f, Time.deltaTime);
         animator.SetFloat("MoveY", 0f, 0.1f, Time.deltaTime);
         animator.SetFloat("MoveSpeed", 0f, 0.1f, Time.deltaTime);
-        movement.SetVelocity(UnityEngine.Vector3.zero);
+        animator.SetBool("IsMoving", false);
+        animator.SetBool("IsRunning", false);
+        
+        // 🔥 CORREGIDO: Asegurar que el movimiento se detenga completamente
+        movement.StopMovement();
+        
+        Debug.Log("🧍 Entered Idle state");
+    }
+    
+    public override void Update()
+    {
+        // 🔥 CORREGIDO: Mantener parámetros en 0 durante idle
+        animator.SetFloat("MoveX", 0f, 0.1f, Time.deltaTime);
+        animator.SetFloat("MoveY", 0f, 0.1f, Time.deltaTime);
+        animator.SetFloat("MoveSpeed", 0f, 0.1f, Time.deltaTime);
+        animator.SetBool("IsMoving", false);
+        animator.SetBool("IsRunning", false);
     }
     
     public override void OnMoveInput(UnityEngine.Vector2 input)
@@ -71,7 +88,6 @@ public class IdlePlayerState : PlayerState
     
     public override void OnDodgeInput()
     {
-        // 🔥 CORREGIDO: Verificar stamina específicamente para dodge
         if (combat.CanDodge() && stats.CanConsummeStamina(config.dodgeStaminaCost))
         {
             player.ChangeState<DodgingPlayerState>();
@@ -87,6 +103,8 @@ public class MovingPlayerState : PlayerState
 {
     public override void Enter()
     {
+        animator.SetBool("IsMoving", true);
+        animator.SetBool("IsRunning", false);
         UpdateAnimationParameters();
     }
     
@@ -97,11 +115,14 @@ public class MovingPlayerState : PlayerState
         if (moveInput.magnitude < 0.1f)
         {
             player.ChangeState<IdlePlayerState>();
+            return;
         }
+        
         // 🔥 CORREGIDO: Usar CanStartSprinting() para empezar a correr
-        else if (movement.IsSprinting && stats.CanStartSprinting())
+        if (movement.IsSprinting && stats.CanStartSprinting())
         {
             player.ChangeState<RunningPlayerState>();
+            return;
         }
         
         UpdateAnimationParameters();
@@ -113,6 +134,8 @@ public class MovingPlayerState : PlayerState
         animator.SetFloat("MoveX", moveInput.x, 0.1f, Time.deltaTime);
         animator.SetFloat("MoveY", moveInput.y, 0.1f, Time.deltaTime);
         animator.SetFloat("MoveSpeed", moveInput.magnitude * 0.5f, 0.1f, Time.deltaTime);
+        animator.SetBool("IsMoving", true);
+        animator.SetBool("IsRunning", false);
     }
     
     public override void OnAttackInput()
@@ -125,7 +148,6 @@ public class MovingPlayerState : PlayerState
     
     public override void OnDodgeInput()
     {
-        // 🔥 CORREGIDO: Verificar stamina específicamente para dodge
         if (combat.CanDodge() && stats.CanConsummeStamina(config.dodgeStaminaCost))
         {
             player.ChangeState<DodgingPlayerState>();
@@ -141,6 +163,8 @@ public class RunningPlayerState : PlayerState
 {
     public override void Enter()
     {
+        animator.SetBool("IsMoving", true);
+        animator.SetBool("IsRunning", true);
         UpdateAnimationParameters();
     }
     
@@ -151,17 +175,18 @@ public class RunningPlayerState : PlayerState
         if (moveInput.magnitude < 0.1f)
         {
             player.ChangeState<IdlePlayerState>();
+            return;
         }
+        
         // 🔥 CORREGIDO: Parar inmediatamente si no tiene stamina O si se queda sin stamina
-        else if (!movement.IsSprinting || stats.IsStaminaEmpty() || !stats.CanSprint())
+        if (!movement.IsSprinting || stats.IsStaminaEmpty() || !stats.CanSprint())
         {
             player.ChangeState<MovingPlayerState>();
+            return;
         }
-        else
-        {
-            // Solo consumir stamina si realmente está corriendo
-            stats.ConsumeStamina(config.runStaminaCost * Time.deltaTime);
-        }
+        
+        // Solo consumir stamina si realmente está corriendo
+        stats.ConsumeStamina(config.runStaminaCost * Time.deltaTime);
         
         UpdateAnimationParameters();
     }
@@ -172,6 +197,8 @@ public class RunningPlayerState : PlayerState
         animator.SetFloat("MoveX", moveInput.x, 0.1f, Time.deltaTime);
         animator.SetFloat("MoveY", moveInput.y, 0.1f, Time.deltaTime);
         animator.SetFloat("MoveSpeed", 1f, 0.1f, Time.deltaTime);
+        animator.SetBool("IsMoving", true);
+        animator.SetBool("IsRunning", true);
     }
     
     public override void OnAttackInput()
@@ -184,7 +211,6 @@ public class RunningPlayerState : PlayerState
     
     public override void OnDodgeInput()
     {
-        // 🔥 CORREGIDO: Verificar stamina específicamente para dodge
         if (combat.CanDodge() && stats.CanConsummeStamina(config.dodgeStaminaCost))
         {
             player.ChangeState<DodgingPlayerState>();
@@ -203,7 +229,6 @@ public class DodgingPlayerState : PlayerState
     
     public override bool CanEnter()
     {
-        // 🔥 CORREGIDO: Verificación más estricta de stamina para dodge
         bool hasStamina = stats.CanConsummeStamina(config.dodgeStaminaCost);
         bool canDodgeCooldown = combat.CanDodge();
         
@@ -255,7 +280,6 @@ public class DodgingPlayerState : PlayerState
             // Volver al estado apropiado
             if (movement.GetMoveInput().magnitude > 0.1f)
             {
-                // 🔥 CORREGIDO: Usar CanStartSprinting() después del dodge
                 if (movement.IsSprinting && stats.CanStartSprinting())
                     player.ChangeState<RunningPlayerState>();
                 else
@@ -297,14 +321,15 @@ public class AttackingPlayerState : PlayerState
         // Consumir stamina
         stats.ConsumeStamina(config.attackStaminaCost);
         
-        // Ejecutar ataque
-        combat.PerformAttack();
-        
-        // 🔥 CORREGIDO: Parar completamente el movimiento y bloquear rotación
-        movement.SetVelocity(UnityEngine.Vector3.zero);
+        // 🔥 CORREGIDO: Parar completamente el movimiento
+        movement.StopMovement();
         
         // Animación
         animator.SetTrigger("Attack");
+        animator.SetBool("IsAttacking", true);
+        
+        // 🔥 CORREGIDO: Ejecutar ataque inmediatamente
+        combat.PerformAttack();
         
         // Efectos
         InputHelper.TriggerHapticFeedback(0.5f, 0.2f);
@@ -317,7 +342,7 @@ public class AttackingPlayerState : PlayerState
         attackTimer += Time.deltaTime;
         
         // 🔥 CORREGIDO: Mantener al personaje quieto durante todo el ataque
-        movement.SetVelocity(UnityEngine.Vector3.zero);
+        movement.StopMovement();
         
         if (attackTimer >= config.attackCooldown)
         {
@@ -338,6 +363,7 @@ public class AttackingPlayerState : PlayerState
     
     public override void Exit()
     {
+        animator.SetBool("IsAttacking", false);
         Debug.Log("⚔️ Attack ended!");
     }
     
@@ -365,7 +391,7 @@ public class StunnedPlayerState : PlayerState
     public override void Enter()
     {
         stunTimer = 0f;
-        movement.SetVelocity(UnityEngine.Vector3.zero);
+        movement.StopMovement();
         animator.SetBool("IsStunned", true);
     }
     
@@ -399,7 +425,7 @@ public class DeadPlayerState : PlayerState
     
     public override void Enter()
     {
-        movement.SetVelocity(UnityEngine.Vector3.zero);
+        movement.StopMovement();
         animator.SetBool("IsDead", true);
         
         // Notificar muerte

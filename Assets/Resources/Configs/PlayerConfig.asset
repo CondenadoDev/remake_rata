@@ -27,7 +27,7 @@ MonoBehaviour:
   comboWindow: 1.5
   maxComboCount: 3
   maxHealth: 100
-  healthRegenRate: 5
+  healthRegenRate: 1
   healthRegenDelay: 3
   maxStamina: 100
   staminaRegenRate: 20
